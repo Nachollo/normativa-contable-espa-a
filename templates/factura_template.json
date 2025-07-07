@@ -1,0 +1,51 @@
+{
+  "name": "Factura Template",
+  "description": "Template for invoice data extraction",
+  "fields": {
+    "numero_factura": {
+      "patterns": [
+        "(?:factura|invoice|bill)[\\s#]*:?\\s*([A-Z0-9\\-\\/]+)",
+        "n[úu]mero[\\s:]*([A-Z0-9\\-\\/]+)",
+        "#\\s*([A-Z0-9\\-\\/]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "fecha": {
+      "patterns": [
+        "fecha[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "date[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "date",
+      "required": true
+    },
+    "importe_total": {
+      "patterns": [
+        "total[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "amount[\\s:]*([0-9,\\.]+)",
+        "importe[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    },
+    "iva": {
+      "patterns": [
+        "iva[\\s:]*([0-9,\\.]+)[\\s]*%?",
+        "vat[\\s:]*([0-9,\\.]+)",
+        "tax[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    },
+    "proveedor": {
+      "patterns": [
+        "de[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "supplier[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "from[\\s:]*([A-Z][A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": false
+    }
+  }
+}

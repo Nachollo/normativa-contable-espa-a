@@ -1,0 +1,41 @@
+{
+  "input_folder": "./input_documents",
+  "output_folder": "./classified_documents",
+  "document_types": {
+    "factura": {
+      "keywords": ["factura", "invoice", "bill", "pago", "importe", "total", "iva"],
+      "extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+      "template": "factura_template.json"
+    },
+    "contrato": {
+      "keywords": ["contrato", "contract", "acuerdo", "agreement", "clausula", "firma"],
+      "extensions": [".pdf", ".docx", ".doc"],
+      "template": "contrato_template.json"
+    },
+    "nomina": {
+      "keywords": ["nomina", "payroll", "salario", "wage", "sueldo", "seguridad social"],
+      "extensions": [".pdf", ".xlsx", ".xls"],
+      "template": "nomina_template.json"
+    },
+    "balance": {
+      "keywords": ["balance", "balance sheet", "activo", "pasivo", "patrimonio", "cuenta"],
+      "extensions": [".pdf", ".xlsx", ".xls"],
+      "template": "balance_template.json"
+    },
+    "recibo": {
+      "keywords": ["recibo", "receipt", "comprobante", "ticket", "voucher"],
+      "extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+      "template": "recibo_template.json"
+    }
+  },
+  "classification": {
+    "confidence_threshold": 0.6,
+    "unknown_folder": "sin_clasificar",
+    "backup_folder": "backup"
+  },
+  "extraction": {
+    "ocr_enabled": true,
+    "language": "spa",
+    "output_format": "json"
+  }
+}

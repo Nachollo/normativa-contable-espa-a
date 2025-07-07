@@ -1,0 +1,39 @@
+{
+  "name": "Contrato Template",
+  "description": "Template for contract data extraction",
+  "fields": {
+    "tipo_contrato": {
+      "patterns": [
+        "contrato\\s+de\\s+([A-Za-z\\s]+)",
+        "contract\\s+of\\s+([A-Za-z\\s]+)",
+        "agreement\\s+for\\s+([A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "fecha_inicio": {
+      "patterns": [
+        "fecha\\s+inicio[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "start\\s+date[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "date",
+      "required": true
+    },
+    "fecha_fin": {
+      "patterns": [
+        "fecha\\s+fin[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "end\\s+date[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "date",
+      "required": false
+    },
+    "partes": {
+      "patterns": [
+        "entre\\s+([A-Za-z\\s,]+)\\s+y\\s+([A-Za-z\\s,]+)",
+        "between\\s+([A-Za-z\\s,]+)\\s+and\\s+([A-Za-z\\s,]+)"
+      ],
+      "type": "array",
+      "required": true
+    }
+  }
+}
