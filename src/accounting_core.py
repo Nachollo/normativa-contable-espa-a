@@ -605,3 +605,47 @@ class AccountingCoreProcessor:
             }
             for e in entries
         ])
+    
+    def get_accounts_by_prefix(self, year: int, prefix: str) -> List[BalanceAccount]:
+        """
+        Get all accounts that start with a specific prefix
+        Used for circularization to get all subaccounts (e.g., 430, 4300, 43001)
+        """
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        
+        try:
+            period = session.query(AccountingPeriod).filter_by(year=year).first()
+            if not period:
+                return []
+            
+            accounts = session.query(BalanceAccount).filter(
+                BalanceAccount.period_id == period.id,
+                BalanceAccount.account_code.like(f"{prefix}%")
+            ).all()
+            
+            return accounts
+        finally:
+            session.close()
+    
+    def get_journal_entries(self, year: int, account_code: str = None) -> List[JournalEntry]:
+        """
+        Get journal entries for a specific year and optionally account code
+        """
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+        
+        try:
+            period = session.query(AccountingPeriod).filter_by(year=year).first()
+            if not period:
+                return []
+            
+            query = session.query(JournalEntry).filter(JournalEntry.period_id == period.id)
+            
+            if account_code:
+                query = query.filter(JournalEntry.account_code.like(f"{account_code}%"))
+            
+            entries = query.order_by(JournalEntry.entry_date).all()
+            return entries
+        finally:
+            session.close()

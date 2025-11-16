@@ -27,6 +27,7 @@ from src.risk_matrix import RiskMatrix
 from src.work_program_generator import WorkProgramGenerator
 from src.questionnaires import AuditQuestionnaires
 from src.analytical_review import AnalyticalReview
+from src.circularization_automation import CircularizationAutomation
 
 # Initialize colorama
 init(autoreset=True)
@@ -79,6 +80,10 @@ class AuditDocumentSystem:
         
         self.analytical_review = AnalyticalReview(self.accounting, self.config['working_papers']['output_dir'])
         print(f"{Fore.GREEN}✓ Revisión analítica y ratios inicializados")
+        
+        # Circularization automation (NEW)
+        self.circularization = CircularizationAutomation(self.accounting, self.config['working_papers']['output_dir'])
+        print(f"{Fore.GREEN}✓ Sistema automatizado de circularización inicializado")
         
         # Setup directories
         self._setup_directories()
@@ -381,6 +386,26 @@ class AuditDocumentSystem:
             print(f"  ROE: {ratios.get('roe', 0):.2%}")
             print(f"  Margen Neto: {ratios.get('margen_neto', 0):.2%}")
         
+        # Step 5.5: Generate circularization working papers (NEW)
+        print(f"\n{Fore.YELLOW}Paso 5.5: Generando papeles de circularización automatizada...")
+        circularization_files = []
+        for confirmation_type in ['clientes', 'proveedores', 'bancos']:
+            try:
+                circ_file = self.circularization.process_circularization(
+                    year, 
+                    confirmation_type, 
+                    responses_file=None,  # No responses file - will apply alternative procedures
+                    entity_type=entity_type
+                )
+                if circ_file:
+                    circularization_files.append(circ_file)
+                    print(f"{Fore.GREEN}  ✓ Circularización {confirmation_type}: {Path(circ_file).name}")
+            except Exception as e:
+                print(f"{Fore.YELLOW}  ⚠ No hay saldos para circularización de {confirmation_type}")
+        
+        if circularization_files:
+            print(f"{Fore.GREEN}✓ Generados {len(circularization_files)} papeles de circularización")
+        
         # Step 6: Generate all audit working papers
         print(f"\n{Fore.YELLOW}Paso 6: Generando papeles de trabajo de auditoría...")
         audit_results = self.comprehensive_papers.generate_complete_audit_package(
@@ -402,8 +427,9 @@ class AuditDocumentSystem:
         print(f"  Programas de trabajo: {len(work_programs)}")
         print(f"  Cuestionarios: {len(questionnaire_files)}")
         print(f"  Revisión analítica: 1 archivo")
+        print(f"  Circularización: {len(circularization_files)} archivos")
         print(f"  Papeles de trabajo: {audit_results.get('total_files', 0)}")
-        total_files_count = 1 + len(work_programs) + len(questionnaire_files) + 1 + audit_results.get('total_files', 0)
+        total_files_count = 1 + len(work_programs) + len(questionnaire_files) + 1 + len(circularization_files) + audit_results.get('total_files', 0)
         print(f"\n  {Fore.YELLOW}TOTAL ARCHIVOS GENERADOS: {total_files_count}")
         print(f"\n{Fore.GREEN}✓ Paquete completo de auditoría generado correctamente\n")
         
@@ -413,6 +439,7 @@ class AuditDocumentSystem:
             'work_programs': work_programs,
             'questionnaires': questionnaire_files,
             'analytical_review': analytical_file,
+            'circularization': circularization_files,
             'audit_papers': audit_results,
             'total_files': total_files_count
         }
