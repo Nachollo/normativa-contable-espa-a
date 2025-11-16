@@ -1,0 +1,64 @@
+{
+  "name": "Extracto Bancario Template",
+  "description": "Template for bank statement data extraction",
+  "fields": {
+    "numero_cuenta": {
+      "patterns": [
+        "cuenta[\\s:]*(ES\\d{2}\\s?\\d{4}\\s?\\d{4}\\s?\\d{4}\\s?\\d{4}\\s?\\d{4})",
+        "iban[\\s:]*(ES\\d{22})",
+        "account[\\s:]*([A-Z]{2}\\d{2}[A-Z0-9]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "titular": {
+      "patterns": [
+        "titular[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "account\\s+holder[\\s:]*([A-Z][A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "periodo": {
+      "patterns": [
+        "periodo[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})\\s*[-a]\\s*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "desde[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})\\s*hasta[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "saldo_inicial": {
+      "patterns": [
+        "saldo\\s+inicial[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "opening\\s+balance[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    },
+    "saldo_final": {
+      "patterns": [
+        "saldo\\s+final[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "closing\\s+balance[\\s:]*([0-9,\\.]+)",
+        "saldo\\s+actual[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    },
+    "total_ingresos": {
+      "patterns": [
+        "total\\s+ingresos[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "total\\s+credits[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    },
+    "total_cargos": {
+      "patterns": [
+        "total\\s+cargos[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "total\\s+debits[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    }
+  }
+}

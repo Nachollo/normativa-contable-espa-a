@@ -1,0 +1,57 @@
+{
+  "name": "Circularización Template",
+  "description": "Template for audit confirmation response data extraction",
+  "fields": {
+    "entidad_confirmante": {
+      "patterns": [
+        "nombre\\s+de\\s+la\\s+entidad[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "confirmado\\s+por[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "entity[\\s:]*([A-Z][A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "fecha_respuesta": {
+      "patterns": [
+        "fecha[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "date[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "date",
+      "required": true
+    },
+    "tipo_confirmacion": {
+      "patterns": [
+        "tipo[\\s:]*([A-Za-z\\s]+)",
+        "confirmaci[óo]n\\s+de[\\s:]*([A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "saldo_confirmado": {
+      "patterns": [
+        "saldo[\\s:]*([0-9,\\.\\-]+)[\\s]*€?",
+        "balance[\\s:]*([0-9,\\.\\-]+)",
+        "amount[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    },
+    "conformidad": {
+      "patterns": [
+        "conforme[\\s:]*([sS][ií]|[nN][oO])",
+        "de\\s+acuerdo[\\s:]*([sS][ií]|[nN][oO])",
+        "confirmed[\\s:]*([yY]es|[nN]o)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "observaciones": {
+      "patterns": [
+        "observaciones[\\s:]*([A-Za-z0-9\\s,\\.]+)",
+        "remarks[\\s:]*([A-Za-z0-9\\s,\\.]+)"
+      ],
+      "type": "string",
+      "required": false
+    }
+  }
+}

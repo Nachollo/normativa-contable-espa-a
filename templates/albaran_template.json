@@ -1,0 +1,57 @@
+{
+  "name": "Albarán Template",
+  "description": "Template for delivery note data extraction",
+  "fields": {
+    "numero_albaran": {
+      "patterns": [
+        "albar[áa]n[\\s#]*:?\\s*([A-Z0-9\\-\\/]+)",
+        "n[úu]mero[\\s:]*([A-Z0-9\\-\\/]+)",
+        "delivery\\s+note[\\s#]*:?\\s*([A-Z0-9\\-\\/]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "fecha": {
+      "patterns": [
+        "fecha[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "date[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "date",
+      "required": true
+    },
+    "proveedor": {
+      "patterns": [
+        "proveedor[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "suministrador[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "supplier[\\s:]*([A-Z][A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "destinatario": {
+      "patterns": [
+        "destinatario[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "cliente[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "customer[\\s:]*([A-Z][A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "numero_pedido": {
+      "patterns": [
+        "pedido[\\s#]*:?\\s*([A-Z0-9\\-\\/]+)",
+        "order[\\s#]*:?\\s*([A-Z0-9\\-\\/]+)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "total_bultos": {
+      "patterns": [
+        "bultos[\\s:]*([0-9]+)",
+        "packages[\\s:]*([0-9]+)"
+      ],
+      "type": "integer",
+      "required": false
+    }
+  }
+}

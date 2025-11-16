@@ -1,0 +1,65 @@
+{
+  "name": "Declaración Fiscal Template",
+  "description": "Template for tax declaration data extraction",
+  "fields": {
+    "modelo": {
+      "patterns": [
+        "modelo[\\s:]*([0-9]+)",
+        "form[\\s:]*([0-9]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "ejercicio": {
+      "patterns": [
+        "ejercicio[\\s:]*(\\d{4})",
+        "a[ñn]o[\\s:]*(\\d{4})",
+        "year[\\s:]*(\\d{4})"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "nif_declarante": {
+      "patterns": [
+        "nif[\\s:]*([A-Z]?\\d{7,8}[A-Z])",
+        "cif[\\s:]*([A-Z]\\d{7}[A-Z])",
+        "identificaci[óo]n[\\s:]*([A-Z0-9]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "periodo": {
+      "patterns": [
+        "periodo[\\s:]*([0-9]{2}/\\d{4})",
+        "trimestre[\\s:]*([1-4]T\\d{4})"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "base_imponible": {
+      "patterns": [
+        "base\\s+imponible[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "taxable\\s+base[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    },
+    "cuota": {
+      "patterns": [
+        "cuota[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "tax\\s+amount[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    },
+    "resultado": {
+      "patterns": [
+        "resultado[\\s:]*([0-9,\\.\\-]+)[\\s]*€?",
+        "a\\s+ingresar[\\s:]*([0-9,\\.]+)",
+        "a\\s+devolver[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    }
+  }
+}

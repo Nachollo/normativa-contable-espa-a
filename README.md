@@ -1,85 +1,217 @@
-# Document Classification Agent
+# Sistema de Procesamiento de Documentos de Auditoría
 
-Este proyecto implementa un agente de clasificación de documentos que puede procesar documentos cargados de forma masiva, clasificarlos según su naturaleza y organizarlos en subcarpetas para posterior extracción de datos.
+Sistema avanzado de procesamiento y clasificación de documentos para auditorías contables, con capacidades de IA, procesamiento masivo y generación automática de papeles de trabajo.
 
-## Características
+## 🚀 Características Principales
 
-- **Clasificación automática**: Clasifica documentos basándose en contenido y nombre de archivo
-- **Organización inteligente**: Organiza documentos en carpetas según su tipo
-- **Extracción de datos**: Extrae datos estructurados usando plantillas predefinidas
-- **Tipos de documentos soportados**:
-  - Facturas
-  - Contratos
-  - Nóminas
-  - Balances
-  - Recibos
-  - Documentos sin clasificar
+### Procesamiento Prioritario de Documentos Contables
+- **Balances de Sumas y Saldos**: Carga prioritaria con detalle mínimo de 4 dígitos
+- **Diarios Contables**: Procesamiento de libros diarios completos en Excel
+- **Múltiples Ejercicios**: Soporte para 3 ejercicios o más (comparativas)
+- **Base de Datos Contable**: Sistema de consultas integrado para toda la auditoría
 
-## Formatos de archivo soportados
+### Inteligencia Artificial
+- **Clasificación Inteligente**: Usando modelos de IA (OpenAI GPT-4 o modelos locales)
+- **OCR Avanzado**: Procesamiento de documentos escaneados con preprocesamiento de imagen
+- **Extracción con IA**: Extracción inteligente de datos usando modelos de lenguaje
 
-- **PDF**: Documentos PDF con texto extraíble
-- **Word**: Documentos .docx y .doc
-- **Excel**: Hojas de cálculo .xlsx y .xls
-- **Imágenes**: .jpg, .jpeg, .png, .bmp, .tiff (con OCR)
-- **Texto**: Archivos .txt
+### Procesamiento Masivo Robusto
+- **Carga por Lotes**: Procesamiento paralelo de grandes cantidades de documentos
+- **Deduplicación**: Detección automática de documentos duplicados por hash
+- **Gestión de Colas**: Sistema de prioridades y reintentos automáticos
+- **Múltiples Fuentes**: Carga desde múltiples directorios simultáneamente
 
-## Instalación
+### Tipos de Documentos Soportados (15+ tipos)
+- **Facturas** (Invoices)
+- **Contratos** (Contracts)  
+- **Nóminas** (Payrolls)
+- **Balances** (Balance Sheets)
+- **Recibos** (Receipts)
+- **Escrituras** (Notarial Deeds)
+- **Justificantes de Pago** (Payment Receipts)
+- **Extractos Bancarios** (Bank Statements)
+- **CIRBE** (Credit Risk Reports)
+- **Declaraciones Fiscales** (Tax Declarations)
+- **Respuestas de Circularización** (Audit Confirmations)
+- **Albaranes** (Delivery Notes)
+- **RLC** (Commercial Registry)
+- **RNT** (Property Registry)
+- **Documentos sin clasificar**
 
-1. Clona el repositorio:
+### Generación de Papeles de Trabajo
+- **Balances Comparativos**: Análisis multi-ejercicio automático
+- **Detalles por Cuenta**: Papeles de trabajo individuales por cuenta
+- **Resumen por Áreas**: Agrupación automática por áreas de auditoría
+- **Ratios Financieros**: Cálculo automático de indicadores
+- **Formato Excel**: Salidas formateadas y profesionales
+
+## 📄 Formatos de Archivo Soportados (25+ formatos)
+
+### Documentos
+- **PDF**: Documentos PDF con texto extraíble y escaneados (con OCR)
+- **Texto**: .txt, .rtf
+
+### Microsoft Office (todas las versiones)
+- **Word**: .doc, .docx, .docm, .dot, .dotx
+- **Excel**: .xls, .xlsx, .xlsm, .xlsb, .xlt, .xltx
+- **PowerPoint**: .ppt, .pptx, .pptm, .pps, .ppsx
+
+### LibreOffice/OpenOffice
+- **Writer**: .odt
+- **Calc**: .ods
+- **Impress**: .odp
+- **Draw**: .odg
+- **Formula**: .odf
+
+### Imágenes (con OCR avanzado)
+- .jpg, .jpeg, .png, .bmp, .tiff, .tif, .gif
+
+### Email
+- **Outlook**: .msg
+- **Email estándar**: .eml
+
+### Datos
+- **CSV**: .csv, .tsv
+- **JSON**: .json
+- **XML**: .xml
+
+### Google Workspace (versiones exportadas)
+- Google Docs, Sheets, Slides
+
+## 📦 Instalación
+
+### Requisitos Previos
+- Python 3.8 o superior
+- 8GB RAM mínimo (16GB recomendado para procesamiento masivo)
+- Tesseract OCR para procesamiento de imágenes
+
+### Instalación Paso a Paso
+
+1. **Clona el repositorio**:
 ```bash
 git clone https://github.com/Nachollo/normativa-contable-espa-a.git
 cd normativa-contable-espa-a
 ```
 
-2. Instala las dependencias:
+2. **Instala las dependencias**:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Para OCR en imágenes, instala Tesseract:
+3. **Instala Tesseract OCR** (para procesamiento de imágenes):
 ```bash
 # Ubuntu/Debian
-sudo apt-get install tesseract-ocr tesseract-ocr-spa
+sudo apt-get install tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng
+sudo apt-get install poppler-utils  # Para PDF a imagen
 
 # macOS
-brew install tesseract tesseract-lang
+brew install tesseract tesseract-lang poppler
 
 # Windows
-# Descarga e instala desde: https://github.com/UB-Mannheim/tesseract/wiki
+# Descarga e instala:
+# - Tesseract: https://github.com/UB-Mannheim/tesseract/wiki
+# - Poppler: https://github.com/oschwartz10612/poppler-windows/releases
 ```
 
-## Uso
-
-### Procesamiento básico
-
-Coloca los documentos a clasificar en la carpeta `input_documents/` y ejecuta:
-
+4. **Descarga modelos de IA** (opcional, para clasificación local):
 ```bash
-python main.py
+python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
 ```
 
-### Modo vigilancia
-
-Para procesar documentos automáticamente según se van añadiendo:
-
+5. **Configura el sistema**:
 ```bash
-python main.py --watch
+python setup.py
 ```
 
-### Ver estadísticas
+## 🎯 Uso del Sistema
 
-Para ver el estado actual de los documentos clasificados:
+### FASE 1: Carga Prioritaria de Documentos Contables
 
+**IMPORTANTE**: Los balances y diarios deben cargarse PRIMERO ya que son la base de toda la auditoría.
+
+1. **Prepara los archivos contables** en formato Excel:
+   - `balance_2023.xlsx` - Balance de sumas y saldos ejercicio 2023
+   - `diario_2023.xlsx` - Libro diario ejercicio 2023
+   - `balance_2022.xlsx` - Balance de sumas y saldos ejercicio 2022
+   - `diario_2022.xlsx` - Libro diario ejercicio 2022
+   - (Y ejercicios anteriores si están disponibles)
+
+2. **Estructura requerida en los Excel**:
+   
+   **Balance de Sumas y Saldos:**
+   - Código de cuenta (mínimo 4 dígitos, ideal hasta máximo detalle)
+   - Nombre de cuenta
+   - Suma Debe
+   - Suma Haber
+   - Saldo Deudor
+   - Saldo Acreedor
+   
+   **Libro Diario:**
+   - Número de asiento
+   - Fecha
+   - Código de cuenta
+   - Nombre de cuenta  
+   - Debe (cargo)
+   - Haber (abono)
+   - Concepto/Descripción
+
+3. **Ejecuta la carga prioritaria**:
 ```bash
-python main.py --stats
+python main_audit.py --load-accounting
 ```
 
-### Configuración personalizada
+### FASE 2: Procesamiento Masivo de Otros Documentos
 
-Puedes usar un archivo de configuración personalizado:
+Una vez cargados los balances y diarios, procesa el resto de documentos:
 
 ```bash
-python main.py --config mi_config.json
+# Procesar documentos en carpeta por defecto
+python main_audit.py --process-bulk
+
+# Procesar desde directorio específico
+python main_audit.py --process-bulk --input-dir /ruta/a/documentos
+```
+
+### Modo Interactivo (Consultas en Tiempo Real)
+
+```bash
+python main_audit.py --interactive
+```
+
+Comandos disponibles:
+- `query <cuenta> [año]` - Consultar saldo de una cuenta
+- `detail <cuenta> <año>` - Generar papel de trabajo detallado
+- `wp <año>` - Generar papeles de trabajo completos del año
+- `exit` - Salir
+
+### Procesamiento Completo Automatizado
+
+```bash
+# Procesa todo: carga contable + documentos + genera papeles
+python main_audit.py
+```
+
+### Ejemplos de Uso
+
+**Ejemplo 1: Consultar cuenta específica**
+```bash
+python main_audit.py -i
+> query 430 2023
+# Muestra saldo y movimientos de clientes
+```
+
+**Ejemplo 2: Generar papel de trabajo de clientes**
+```bash
+python main_audit.py -i
+> detail 430 2023
+# Genera Excel detallado con todos los movimientos
+```
+
+**Ejemplo 3: Procesar 10,000 documentos**
+```bash
+# Coloca los documentos en input_documents/
+python main_audit.py --process-bulk
+# El sistema los procesa en paralelo con barra de progreso
 ```
 
 ## Estructura de carpetas
