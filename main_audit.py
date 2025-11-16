@@ -28,6 +28,7 @@ from src.work_program_generator import WorkProgramGenerator
 from src.questionnaires import AuditQuestionnaires
 from src.analytical_review import AnalyticalReview
 from src.circularization_automation import CircularizationAutomation
+from src.area_summaries import generate_area_summaries
 
 # Initialize colorama
 init(autoreset=True)
@@ -406,6 +407,12 @@ class AuditDocumentSystem:
         if circularization_files:
             print(f"{Fore.GREEN}✓ Generados {len(circularization_files)} papeles de circularización")
         
+        # Step 5.7: Generate area summaries with adjustments and reclassifications (NEW)
+        print(f"\n{Fore.YELLOW}Paso 5.7: Generando sumarias de áreas con ajustes y reclasificaciones...")
+        output_dir = self.config.get('working_papers', {}).get('output_dir', './papeles_trabajo')
+        area_summary_files = generate_area_summaries(self.accounting, year, output_dir, entity_type)
+        print(f"{Fore.GREEN}✓ Generadas {len(area_summary_files)} sumarias de áreas")
+        
         # Step 6: Generate all audit working papers
         print(f"\n{Fore.YELLOW}Paso 6: Generando papeles de trabajo de auditoría...")
         audit_results = self.comprehensive_papers.generate_complete_audit_package(
@@ -428,8 +435,9 @@ class AuditDocumentSystem:
         print(f"  Cuestionarios: {len(questionnaire_files)}")
         print(f"  Revisión analítica: 1 archivo")
         print(f"  Circularización: {len(circularization_files)} archivos")
+        print(f"  Sumarias de áreas: {len(area_summary_files)} archivos")
         print(f"  Papeles de trabajo: {audit_results.get('total_files', 0)}")
-        total_files_count = 1 + len(work_programs) + len(questionnaire_files) + 1 + len(circularization_files) + audit_results.get('total_files', 0)
+        total_files_count = 1 + len(work_programs) + len(questionnaire_files) + 1 + len(circularization_files) + len(area_summary_files) + audit_results.get('total_files', 0)
         print(f"\n  {Fore.YELLOW}TOTAL ARCHIVOS GENERADOS: {total_files_count}")
         print(f"\n{Fore.GREEN}✓ Paquete completo de auditoría generado correctamente\n")
         
@@ -440,6 +448,7 @@ class AuditDocumentSystem:
             'questionnaires': questionnaire_files,
             'analytical_review': analytical_file,
             'circularization': circularization_files,
+            'area_summaries': area_summary_files,
             'audit_papers': audit_results,
             'total_files': total_files_count
         }
