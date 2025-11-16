@@ -25,6 +25,8 @@ from src.comprehensive_audit_papers import ComprehensiveAuditPapers
 from src.materiality_calculator import MaterialityCalculator
 from src.risk_matrix import RiskMatrix
 from src.work_program_generator import WorkProgramGenerator
+from src.questionnaires import AuditQuestionnaires
+from src.analytical_review import AnalyticalReview
 
 # Initialize colorama
 init(autoreset=True)
@@ -70,6 +72,13 @@ class AuditDocumentSystem:
         # Comprehensive audit papers (materialidad, muestreo, todas las áreas)
         self.comprehensive_papers = ComprehensiveAuditPapers(self.config, self.accounting)
         print(f"{Fore.GREEN}✓ Generador completo de papeles de auditoría inicializado")
+        
+        # Questionnaires and analytical review (NEW)
+        self.questionnaires = AuditQuestionnaires(self.accounting, self.config['working_papers']['output_dir'])
+        print(f"{Fore.GREEN}✓ Cuestionarios de auditoría inicializados")
+        
+        self.analytical_review = AnalyticalReview(self.accounting, self.config['working_papers']['output_dir'])
+        print(f"{Fore.GREEN}✓ Revisión analítica y ratios inicializados")
         
         # Setup directories
         self._setup_directories()
@@ -346,8 +355,34 @@ class AuditDocumentSystem:
         template_path = work_program_gen.save_custom_procedures_template()
         print(f"{Fore.CYAN}  Plantilla de procedimientos guardada: {Path(template_path).name}")
         
-        # Step 4: Generate all audit working papers
-        print(f"\n{Fore.YELLOW}Paso 4: Generando papeles de trabajo de auditoría...")
+        # Step 4: Generate questionnaires
+        print(f"\n{Fore.YELLOW}Paso 4: Generando cuestionarios de auditoría...")
+        questionnaire_files = self.questionnaires.generate_all_questionnaires(year)
+        print(f"{Fore.GREEN}✓ Generados {len(questionnaire_files)} cuestionarios")
+        
+        # Step 5: Generate analytical review and financial ratios
+        print(f"\n{Fore.YELLOW}Paso 5: Generando revisión analítica y ratios financieros...")
+        # Determine years for comparison (current + 2 prior years if available)
+        compare_years = [year, year-1, year-2] if year >= 2 else [year]
+        sector = entity_info.get('sector', 'default')
+        analytical_file = self.analytical_review.generate_analytical_review_workpaper(
+            year, 
+            sector, 
+            compare_years
+        )
+        print(f"{Fore.GREEN}✓ Revisión analítica generada: {Path(analytical_file).name}")
+        
+        # Display key ratios
+        ratios = self.analytical_review.calculate_financial_ratios(year)
+        if ratios and '_values' in ratios:
+            print(f"\n{Fore.CYAN}Ratios clave del ejercicio:")
+            print(f"  Liquidez: {ratios.get('ratio_liquidez', 0):.2f}")
+            print(f"  Endeudamiento: {ratios.get('ratio_endeudamiento', 0):.2%}")
+            print(f"  ROE: {ratios.get('roe', 0):.2%}")
+            print(f"  Margen Neto: {ratios.get('margen_neto', 0):.2%}")
+        
+        # Step 6: Generate all audit working papers
+        print(f"\n{Fore.YELLOW}Paso 6: Generando papeles de trabajo de auditoría...")
         audit_results = self.comprehensive_papers.generate_complete_audit_package(
             year,
             entity_type
@@ -365,15 +400,21 @@ class AuditDocumentSystem:
         print(f"  Áreas de alto riesgo: {len(high_risk)}")
         print(f"  Áreas de riesgo medio: {len(medium_risk)}")
         print(f"  Programas de trabajo: {len(work_programs)}")
+        print(f"  Cuestionarios: {len(questionnaire_files)}")
+        print(f"  Revisión analítica: 1 archivo")
         print(f"  Papeles de trabajo: {audit_results.get('total_files', 0)}")
+        total_files_count = 1 + len(work_programs) + len(questionnaire_files) + 1 + audit_results.get('total_files', 0)
+        print(f"\n  {Fore.YELLOW}TOTAL ARCHIVOS GENERADOS: {total_files_count}")
         print(f"\n{Fore.GREEN}✓ Paquete completo de auditoría generado correctamente\n")
         
         return {
             'materiality': materiality,
             'risk_matrix_file': risk_matrix_file,
             'work_programs': work_programs,
+            'questionnaires': questionnaire_files,
+            'analytical_review': analytical_file,
             'audit_papers': audit_results,
-            'total_files': 1 + len(work_programs) + audit_results.get('total_files', 0)
+            'total_files': total_files_count
         }
     
     def interactive_mode(self):
