@@ -14,6 +14,13 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
 
+try:
+    from src.accounting_core import AccountingPeriod, BalanceAccount, JournalEntry
+except ImportError:
+    AccountingPeriod = None
+    BalanceAccount = None
+    JournalEntry = None
+
 
 class StatisticalSamplingGenerator:
     """Generates statistical samples for audit testing"""
@@ -54,19 +61,15 @@ class StatisticalSamplingGenerator:
         self.logger.info(f"Generating purchases sample for year {year}")
         
         # Get period
-        period = self.accounting.session.query(
-            self.accounting.AccountingPeriod
-        ).filter_by(year=year).first()
+        period = self.accounting.session.query(AccountingPeriod).filter_by(year=year).first()
         
         if not period:
             return {'error': f'Period {year} not found'}
         
         # Get purchase transactions from journal
-        purchases = self.accounting.session.query(
-            self.accounting.JournalEntry
-        ).filter_by(period_id=period.id).filter(
-            self.accounting.JournalEntry.account_code.like('60%')  # Purchases accounts
-        ).order_by(self.accounting.JournalEntry.entry_date).all()
+        purchases = self.accounting.session.query(JournalEntry).filter_by(period_id=period.id).filter(
+            JournalEntry.account_code.like('60%')  # Purchases accounts
+        ).order_by(JournalEntry.entry_date).all()
         
         if not purchases:
             return {'error': 'No purchase transactions found'}
@@ -151,19 +154,15 @@ class StatisticalSamplingGenerator:
         self.logger.info(f"Generating sales sample for year {year}")
         
         # Get period
-        period = self.accounting.session.query(
-            self.accounting.AccountingPeriod
-        ).filter_by(year=year).first()
+        period = self.accounting.session.query(AccountingPeriod).filter_by(year=year).first()
         
         if not period:
             return {'error': f'Period {year} not found'}
         
         # Get sales transactions from journal
-        sales = self.accounting.session.query(
-            self.accounting.JournalEntry
-        ).filter_by(period_id=period.id).filter(
-            self.accounting.JournalEntry.account_code.like('70%')  # Sales accounts
-        ).order_by(self.accounting.JournalEntry.entry_date).all()
+        sales = self.accounting.session.query(JournalEntry).filter_by(period_id=period.id).filter(
+            JournalEntry.account_code.like('70%')  # Sales accounts
+        ).order_by(JournalEntry.entry_date).all()
         
         if not sales:
             return {'error': 'No sales transactions found'}

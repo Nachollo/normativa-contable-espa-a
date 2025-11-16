@@ -13,6 +13,12 @@ import json
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 
+try:
+    from src.accounting_core import AccountingPeriod, BalanceAccount
+except ImportError:
+    AccountingPeriod = None
+    BalanceAccount = None
+
 
 class MaterialityCalculator:
     """Calculates audit materiality according to ISA/NIA standards"""
@@ -58,7 +64,7 @@ class MaterialityCalculator:
         
         # Get accounting period
         period = self.accounting.session.query(
-            self.accounting.AccountingPeriod
+            AccountingPeriod
         ).filter_by(year=year).first()
         
         if not period:
@@ -130,7 +136,7 @@ class MaterialityCalculator:
         """Extract key financial figures from accounting data"""
         
         accounts = self.accounting.session.query(
-            self.accounting.BalanceAccount
+            BalanceAccount
         ).filter_by(period_id=period.id).all()
         
         # Calculate key figures

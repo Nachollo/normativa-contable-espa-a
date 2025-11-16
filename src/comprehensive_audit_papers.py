@@ -14,6 +14,13 @@ from openpyxl.utils import get_column_letter
 from src.materiality_calculator import MaterialityCalculator
 from src.statistical_sampling import StatisticalSamplingGenerator
 
+try:
+    from src.accounting_core import AccountingPeriod, BalanceAccount, JournalEntry
+except ImportError:
+    AccountingPeriod = None
+    BalanceAccount = None
+    JournalEntry = None
+
 
 class ComprehensiveAuditPapers:
     """Generates comprehensive audit working papers"""
@@ -124,9 +131,7 @@ class ComprehensiveAuditPapers:
     def _generate_area_working_paper(self, year: int, area_key: str, area_config: Dict) -> Optional[Path]:
         """Generate working paper for a specific audit area"""
         try:
-            period = self.accounting.session.query(
-                self.accounting.AccountingPeriod
-            ).filter_by(year=year).first()
+            period = self.accounting.session.query(AccountingPeriod).filter_by(year=year).first()
             
             if not period:
                 return None
@@ -154,12 +159,10 @@ class ComprehensiveAuditPapers:
             # Get accounts for this area
             row = 6
             for account_prefix in area_config['accounts']:
-                accounts = self.accounting.session.query(
-                    self.accounting.BalanceAccount
-                ).filter_by(period_id=period.id).filter(
-                    self.accounting.BalanceAccount.account_code.like(f'{account_prefix}%'),
-                    self.accounting.BalanceAccount.account_level >= 4
-                ).order_by(self.accounting.BalanceAccount.account_code).all()
+                accounts = self.accounting.session.query(BalanceAccount).filter_by(period_id=period.id).filter(
+                    BalanceAccount.account_code.like(f'{account_prefix}%'),
+                    BalanceAccount.account_level >= 4
+                ).order_by(BalanceAccount.account_code).all()
                 
                 for acc in accounts:
                     ws.cell(row, 1, acc.account_code)
@@ -203,15 +206,11 @@ class ComprehensiveAuditPapers:
                     ws.cell(3, col, header).font = Font(bold=True)
                 
                 # Get accounts
-                period = self.accounting.session.query(
-                    self.accounting.AccountingPeriod
-                ).filter_by(year=year).first()
+                period = self.accounting.session.query(AccountingPeriod).filter_by(year=year).first()
                 
                 if period:
-                    accounts = self.accounting.session.query(
-                        self.accounting.BalanceAccount
-                    ).filter_by(period_id=period.id).filter(
-                        self.accounting.BalanceAccount.account_code.like(f'{prefix}%')
+                    accounts = self.accounting.session.query(BalanceAccount).filter_by(period_id=period.id).filter(
+                        BalanceAccount.account_code.like(f'{prefix}%')
                     ).limit(50).all()
                     
                     for i, acc in enumerate(accounts, start=4):
