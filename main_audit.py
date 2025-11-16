@@ -21,6 +21,7 @@ from src.accounting_core import AccountingCoreProcessor
 from src.bulk_loader import BulkDocumentLoader
 from src.ai_processor import AIDocumentProcessor
 from src.working_papers import WorkingPapersGenerator
+from src.comprehensive_audit_papers import ComprehensiveAuditPapers
 
 # Initialize colorama
 init(autoreset=True)
@@ -62,6 +63,10 @@ class AuditDocumentSystem:
         # Working papers generator
         self.working_papers = WorkingPapersGenerator(self.config, self.accounting)
         print(f"{Fore.GREEN}✓ Generador de papeles de trabajo inicializado")
+        
+        # Comprehensive audit papers (materialidad, muestreo, todas las áreas)
+        self.comprehensive_papers = ComprehensiveAuditPapers(self.config, self.accounting)
+        print(f"{Fore.GREEN}✓ Generador completo de papeles de auditoría inicializado")
         
         # Setup directories
         self._setup_directories()
@@ -359,6 +364,18 @@ def main():
         default='./input_documents',
         help='Directorio de entrada'
     )
+    parser.add_argument(
+        '--generate-audit-papers',
+        type=int,
+        metavar='YEAR',
+        help='Generar paquete completo de papeles de trabajo para el año especificado'
+    )
+    parser.add_argument(
+        '--entity-type',
+        choices=['mercantil', 'esal', 'pyme'],
+        default='mercantil',
+        help='Tipo de entidad para papeles de trabajo'
+    )
     
     args = parser.parse_args()
     
@@ -391,10 +408,24 @@ def main():
         if args.process_bulk:
             system.process_bulk_documents(args.input_dir)
         
+        if args.generate_audit_papers:
+            # Generate complete audit working papers package
+            print(f"\n{Fore.CYAN}Generando paquete completo de papeles de trabajo...")
+            results = system.comprehensive_papers.generate_complete_audit_package(
+                args.generate_audit_papers,
+                args.entity_type
+            )
+            
+            print(f"\n{Fore.GREEN}✓ Paquete de auditoría generado:")
+            print(f"  Total archivos: {results.get('total_files', 0)}")
+            print(f"\n{Fore.CYAN}Archivos generados:")
+            for item in results.get('files', []):
+                print(f"  - {item['area']}: {Path(item['file']).name}")
+        
         if args.interactive:
             system.interactive_mode()
         
-        if not (args.load_accounting or args.process_bulk or args.interactive):
+        if not (args.load_accounting or args.process_bulk or args.interactive or args.generate_audit_papers):
             # Default: process all
             print(f"\n{Fore.YELLOW}Modo por defecto: Procesamiento completo")
             print("Para opciones específicas, use --help\n")
