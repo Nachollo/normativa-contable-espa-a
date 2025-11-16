@@ -64,3 +64,14 @@ Thumbs.db
 # Documentos de prueba
 test_documents/
 sample_docs/
+
+# Bases de datos de prueba
+test_*.db
+*.db-journal
+
+# Papeles de trabajo generados (excepto los del demo)
+papeles_trabajo/*.xlsx
+!papeles_trabajo/.gitkeep
+
+# Templates de audit programs generados
+templates/audit_programs/*.json

@@ -22,6 +22,9 @@ from src.bulk_loader import BulkDocumentLoader
 from src.ai_processor import AIDocumentProcessor
 from src.working_papers import WorkingPapersGenerator
 from src.comprehensive_audit_papers import ComprehensiveAuditPapers
+from src.materiality_calculator import MaterialityCalculator
+from src.risk_matrix import RiskMatrix
+from src.work_program_generator import WorkProgramGenerator
 
 # Initialize colorama
 init(autoreset=True)
@@ -273,6 +276,106 @@ class AuditDocumentSystem:
         else:
             print(f"{Fore.RED}✗ No se pudo generar el papel de trabajo")
     
+    def generate_complete_audit_package(self, year: int, entity_type: str = 'mercantil',
+                                       entity_info: Optional[Dict] = None):
+        """
+        Generate complete audit package including:
+        - Risk matrix
+        - Work programs for all areas
+        - All audit working papers
+        
+        Args:
+            year: Audit year
+            entity_type: 'mercantil', 'esal', 'pyme'
+            entity_info: Additional entity information
+        """
+        print(f"\n{Fore.CYAN}{'='*60}")
+        print(f"{Fore.CYAN}  GENERACIÓN COMPLETA DE PAQUETE DE AUDITORÍA")
+        print(f"{Fore.CYAN}{'='*60}\n")
+        
+        if entity_info is None:
+            entity_info = {
+                'first_year_audit': False,
+                'going_concern_issues': False,
+                'significant_changes': False
+            }
+        
+        # Step 1: Calculate materiality
+        print(f"{Fore.YELLOW}Paso 1: Calculando materialidad...")
+        materiality_calc = MaterialityCalculator(self.config, self.accounting)
+        materiality = materiality_calc.calculate_materiality(year, entity_type)
+        
+        if 'error' in materiality:
+            print(f"{Fore.RED}Error calculando materialidad: {materiality['error']}")
+            return
+        
+        print(f"{Fore.GREEN}✓ Materialidad calculada:")
+        print(f"  Global: {materiality['overall_materiality']:,.2f} €")
+        print(f"  Ejecución: {materiality['performance_materiality']:,.2f} €")
+        print(f"  Trivialidad: {materiality['trivial_threshold']:,.2f} €")
+        
+        # Step 2: Generate risk matrix
+        print(f"\n{Fore.YELLOW}Paso 2: Generando matriz de riesgos...")
+        risk_matrix_gen = RiskMatrix(self.config, self.accounting, materiality)
+        risk_matrix = risk_matrix_gen.generate_risk_matrix(year, entity_info)
+        risk_matrix_file = risk_matrix_gen.export_to_excel(risk_matrix, year)
+        print(f"{Fore.GREEN}✓ Matriz de riesgos generada: {Path(risk_matrix_file).name}")
+        
+        # Display risk summary
+        print(f"\n{Fore.CYAN}Resumen de riesgos por área:")
+        high_risk = risk_matrix[risk_matrix['combined_risk'] == 'high']
+        medium_risk = risk_matrix[risk_matrix['combined_risk'] == 'medium']
+        
+        if len(high_risk) > 0:
+            print(f"\n  {Fore.RED}Áreas de ALTO RIESGO ({len(high_risk)}):")
+            for _, area in high_risk.iterrows():
+                print(f"    - {area['area_name']} (Significatividad: {area['significance_pct']:.1f}%)")
+        
+        if len(medium_risk) > 0:
+            print(f"\n  {Fore.YELLOW}Áreas de RIESGO MEDIO ({len(medium_risk)}):")
+            for _, area in medium_risk.iterrows():
+                print(f"    - {area['area_name']} (Significatividad: {area['significance_pct']:.1f}%)")
+        
+        # Step 3: Generate work programs
+        print(f"\n{Fore.YELLOW}Paso 3: Generando programas de trabajo...")
+        work_program_gen = WorkProgramGenerator(self.config, risk_matrix)
+        work_programs = work_program_gen.generate_all_work_programs(year)
+        print(f"{Fore.GREEN}✓ Generados {len(work_programs)} programas de trabajo")
+        
+        # Save custom procedures template
+        template_path = work_program_gen.save_custom_procedures_template()
+        print(f"{Fore.CYAN}  Plantilla de procedimientos guardada: {Path(template_path).name}")
+        
+        # Step 4: Generate all audit working papers
+        print(f"\n{Fore.YELLOW}Paso 4: Generando papeles de trabajo de auditoría...")
+        audit_results = self.comprehensive_papers.generate_complete_audit_package(
+            year,
+            entity_type
+        )
+        
+        print(f"{Fore.GREEN}✓ Papeles de trabajo generados: {audit_results.get('total_files', 0)} archivos")
+        
+        # Summary
+        print(f"\n{Fore.CYAN}{'='*60}")
+        print(f"{Fore.CYAN}  RESUMEN DEL PAQUETE DE AUDITORÍA")
+        print(f"{Fore.CYAN}{'='*60}\n")
+        print(f"  Ejercicio: {year}")
+        print(f"  Tipo de entidad: {entity_type.upper()}")
+        print(f"  Materialidad global: {materiality['overall_materiality']:,.2f} €")
+        print(f"  Áreas de alto riesgo: {len(high_risk)}")
+        print(f"  Áreas de riesgo medio: {len(medium_risk)}")
+        print(f"  Programas de trabajo: {len(work_programs)}")
+        print(f"  Papeles de trabajo: {audit_results.get('total_files', 0)}")
+        print(f"\n{Fore.GREEN}✓ Paquete completo de auditoría generado correctamente\n")
+        
+        return {
+            'materiality': materiality,
+            'risk_matrix_file': risk_matrix_file,
+            'work_programs': work_programs,
+            'audit_papers': audit_results,
+            'total_files': 1 + len(work_programs) + audit_results.get('total_files', 0)
+        }
+    
     def interactive_mode(self):
         """Interactive mode for queries"""
         print(f"\n{Fore.CYAN}{'='*60}")
@@ -409,18 +512,11 @@ def main():
             system.process_bulk_documents(args.input_dir)
         
         if args.generate_audit_papers:
-            # Generate complete audit working papers package
-            print(f"\n{Fore.CYAN}Generando paquete completo de papeles de trabajo...")
-            results = system.comprehensive_papers.generate_complete_audit_package(
+            # Generate complete audit package including risk matrix and work programs
+            results = system.generate_complete_audit_package(
                 args.generate_audit_papers,
                 args.entity_type
             )
-            
-            print(f"\n{Fore.GREEN}✓ Paquete de auditoría generado:")
-            print(f"  Total archivos: {results.get('total_files', 0)}")
-            print(f"\n{Fore.CYAN}Archivos generados:")
-            for item in results.get('files', []):
-                print(f"  - {item['area']}: {Path(item['file']).name}")
         
         if args.interactive:
             system.interactive_mode()
