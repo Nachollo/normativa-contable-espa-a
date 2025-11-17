@@ -22,6 +22,7 @@ from src.bulk_loader import BulkDocumentLoader
 from src.ai_processor import AIDocumentProcessor
 from src.working_papers import WorkingPapersGenerator
 from src.comprehensive_audit_papers import ComprehensiveAuditPapers
+from src.final_audit_module import FinalAuditModule
 from src.materiality_calculator import MaterialityCalculator
 from src.risk_matrix import RiskMatrix
 from src.work_program_generator import WorkProgramGenerator
