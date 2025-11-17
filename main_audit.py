@@ -12,6 +12,7 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Optional
 from colorama import init, Fore, Style
+from tqdm import tqdm
 
 from src.document_classifier import DocumentClassifier
 from src.folder_organizer import FolderOrganizer
