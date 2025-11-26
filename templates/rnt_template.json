@@ -1,0 +1,72 @@
+{
+  "name": "RNT Template",
+  "description": "Template for Property Registry (Registro de la Propiedad) data extraction",
+  "fields": {
+    "numero_finca": {
+      "patterns": [
+        "finca\\s+registral[\\s#]*:?\\s*([0-9]+)",
+        "finca[\\s#]*:?\\s*([0-9]+)",
+        "property[\\s#]*:?\\s*([0-9]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "registro": {
+      "patterns": [
+        "registro\\s+de\\s+la\\s+propiedad\\s+de[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "registro[\\s:]*(n[úu]mero\\s+[0-9]+\\s+de\\s+[A-Z][A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "tomo": {
+      "patterns": [
+        "tomo[\\s:]*([0-9]+)",
+        "volume[\\s:]*([0-9]+)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "libro": {
+      "patterns": [
+        "libro[\\s:]*([0-9]+)",
+        "book[\\s:]*([0-9]+)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "folio": {
+      "patterns": [
+        "folio[\\s:]*([0-9]+)",
+        "page[\\s:]*([0-9]+)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "inscripcion": {
+      "patterns": [
+        "inscripci[óo]n[\\s:]*([0-9]+)[ªa]?",
+        "registration[\\s:]*([0-9]+)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "superficie": {
+      "patterns": [
+        "superficie[\\s:]*([0-9,\\.]+)\\s*m2",
+        "area[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    },
+    "direccion": {
+      "patterns": [
+        "sita\\s+en[\\s:]*([A-Za-z0-9\\s,\\.]+)",
+        "ubicada\\s+en[\\s:]*([A-Za-z0-9\\s,\\.]+)",
+        "address[\\s:]*([A-Za-z0-9\\s,\\.]+)"
+      ],
+      "type": "string",
+      "required": false
+    }
+  }
+}

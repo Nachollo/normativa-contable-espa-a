@@ -1,0 +1,111 @@
+{
+  "input_folder": "./input_documents",
+  "output_folder": "./classified_documents",
+  "database": {
+    "path": "./accounting_core.db"
+  },
+  "accounting": {
+    "min_account_digits": 4,
+    "max_detail_level": 10,
+    "required_exercises": 3,
+    "priority_loading": true
+  },
+  "processing": {
+    "max_workers": 8,
+    "batch_size": 100,
+    "max_retries": 3,
+    "chunk_size_mb": 100
+  },
+  "ai": {
+    "use_openai": false,
+    "openai_api_key": "",
+    "use_local_models": true
+  },
+  "working_papers": {
+    "output_dir": "./papeles_trabajo",
+    "generate_comparatives": true,
+    "min_materiality_threshold": 1000
+  },
+  "document_types": {
+    "factura": {
+      "keywords": ["factura", "invoice", "bill", "pago", "importe", "total", "iva"],
+      "extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+      "template": "factura_template.json"
+    },
+    "contrato": {
+      "keywords": ["contrato", "contract", "acuerdo", "agreement", "clausula", "firma"],
+      "extensions": [".pdf", ".docx", ".doc"],
+      "template": "contrato_template.json"
+    },
+    "nomina": {
+      "keywords": ["nomina", "payroll", "salario", "wage", "sueldo", "seguridad social"],
+      "extensions": [".pdf", ".xlsx", ".xls"],
+      "template": "nomina_template.json"
+    },
+    "balance": {
+      "keywords": ["balance", "balance sheet", "activo", "pasivo", "patrimonio", "cuenta"],
+      "extensions": [".pdf", ".xlsx", ".xls"],
+      "template": "balance_template.json"
+    },
+    "recibo": {
+      "keywords": ["recibo", "receipt", "comprobante", "ticket", "voucher"],
+      "extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+      "template": "recibo_template.json"
+    },
+    "escritura": {
+      "keywords": ["escritura", "notaria", "notarial", "notario", "deed", "protocolo", "elevacion"],
+      "extensions": [".pdf", ".docx", ".doc"],
+      "template": "escritura_template.json"
+    },
+    "justificante_pago": {
+      "keywords": ["justificante", "justificacion", "pago", "payment proof", "transferencia", "abono", "cargo"],
+      "extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+      "template": "justificante_pago_template.json"
+    },
+    "extracto_bancario": {
+      "keywords": ["extracto", "bank statement", "cuenta corriente", "movimientos", "saldo", "banco"],
+      "extensions": [".pdf", ".xlsx", ".xls", ".csv"],
+      "template": "extracto_bancario_template.json"
+    },
+    "cirbe": {
+      "keywords": ["cirbe", "central de informacion", "riesgos", "banco de espana", "credito", "endeudamiento"],
+      "extensions": [".pdf", ".xlsx", ".xls"],
+      "template": "cirbe_template.json"
+    },
+    "declaracion_fiscal": {
+      "keywords": ["declaracion", "modelo", "hacienda", "tributaria", "impuesto", "irpf", "iva", "sociedades"],
+      "extensions": [".pdf", ".docx", ".doc", ".xlsx", ".xls"],
+      "template": "declaracion_fiscal_template.json"
+    },
+    "circularizacion": {
+      "keywords": ["circularizacion", "confirmacion", "auditoria", "audit confirmation", "respuesta", "verificacion"],
+      "extensions": [".pdf", ".docx", ".doc", ".jpg", ".jpeg", ".png"],
+      "template": "circularizacion_template.json"
+    },
+    "albaran": {
+      "keywords": ["albaran", "delivery note", "entrega", "remito", "expedicion", "envio"],
+      "extensions": [".pdf", ".jpg", ".jpeg", ".png"],
+      "template": "albaran_template.json"
+    },
+    "rlc": {
+      "keywords": ["registro mercantil", "rlc", "commercial registry", "inscripcion", "hoja registral"],
+      "extensions": [".pdf", ".docx", ".doc"],
+      "template": "rlc_template.json"
+    },
+    "rnt": {
+      "keywords": ["registro propiedad", "rnt", "property registry", "finca", "nota simple", "registral"],
+      "extensions": [".pdf", ".docx", ".doc"],
+      "template": "rnt_template.json"
+    }
+  },
+  "classification": {
+    "confidence_threshold": 0.6,
+    "unknown_folder": "sin_clasificar",
+    "backup_folder": "backup"
+  },
+  "extraction": {
+    "ocr_enabled": true,
+    "language": "spa",
+    "output_format": "json"
+  }
+}

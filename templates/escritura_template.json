@@ -1,0 +1,48 @@
+{
+  "name": "Escritura Template",
+  "description": "Template for notarial deed data extraction",
+  "fields": {
+    "numero_protocolo": {
+      "patterns": [
+        "n[úu]mero\\s+de\\s+protocolo[\\s:]*([0-9\\-\\/]+)",
+        "protocolo[\\s#]*:?\\s*([0-9\\-\\/]+)",
+        "deed\\s+number[\\s:]*([0-9\\-\\/]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "notario": {
+      "patterns": [
+        "ante\\s+m[íi][,\\s]+([A-Z][A-Za-z\\s]+),\\s+notario",
+        "notario[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "notary[\\s:]*([A-Z][A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "fecha_otorgamiento": {
+      "patterns": [
+        "fecha[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "otorgada\\s+en[^,]+,\\s+a\\s+(\\d{1,2})\\s+de\\s+([A-Za-z]+)\\s+de\\s+(\\d{4})"
+      ],
+      "type": "date",
+      "required": true
+    },
+    "tipo_acto": {
+      "patterns": [
+        "escritura\\s+de\\s+([A-Za-z\\s]+)",
+        "acto[\\s:]*([A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "comparecientes": {
+      "patterns": [
+        "comparece[n]?[\\s:]*([A-Z][A-Za-z\\s,]+)",
+        "otorgan[te|tes][\\s:]*([A-Z][A-Za-z\\s,]+)"
+      ],
+      "type": "array",
+      "required": false
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "name": "CIRBE Template",
+  "description": "Template for Central de Información de Riesgos del Banco de España data extraction",
+  "fields": {
+    "nif_titular": {
+      "patterns": [
+        "nif[\\s:]*([A-Z]?\\d{7,8}[A-Z])",
+        "cif[\\s:]*([A-Z]\\d{7}[A-Z])",
+        "identificaci[óo]n[\\s:]*([A-Z0-9]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "fecha_consulta": {
+      "patterns": [
+        "fecha\\s+de\\s+consulta[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "fecha[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "date",
+      "required": true
+    },
+    "riesgo_total": {
+      "patterns": [
+        "riesgo\\s+total[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "total\\s+risk[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    },
+    "numero_entidades": {
+      "patterns": [
+        "n[úu]mero\\s+de\\s+entidades[\\s:]*([0-9]+)",
+        "entidades[\\s:]*([0-9]+)"
+      ],
+      "type": "integer",
+      "required": false
+    },
+    "riesgo_directo": {
+      "patterns": [
+        "riesgo\\s+directo[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "direct\\s+risk[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    },
+    "riesgo_indirecto": {
+      "patterns": [
+        "riesgo\\s+indirecto[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "indirect\\s+risk[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    }
+  }
+}

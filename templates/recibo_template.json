@@ -1,0 +1,38 @@
+{
+  "name": "Recibo Template",
+  "description": "Template for receipt data extraction",
+  "fields": {
+    "establecimiento": {
+      "patterns": [
+        "^([A-Z][A-Za-z\\s&\\.]+)",
+        "store[\\s:]*([A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "fecha": {
+      "patterns": [
+        "(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "date[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "date",
+      "required": true
+    },
+    "total": {
+      "patterns": [
+        "total[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "amount[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    },
+    "metodo_pago": {
+      "patterns": [
+        "(tarjeta|card|efectivo|cash|transferencia)",
+        "payment[\\s:]*([A-Za-z]+)"
+      ],
+      "type": "string",
+      "required": false
+    }
+  }
+}

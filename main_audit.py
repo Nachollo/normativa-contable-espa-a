@@ -1,0 +1,722 @@
+#!/usr/bin/env python3
+"""
+Audit Document Processing System
+Main application with priority loading for accounting core documents
+
+Phase 2 Features:
+- Emergency stop button (Ctrl+C)
+- AI-powered auto-recovery
+- Graceful error handling
+"""
+
+import os
+import sys
+import json
+import logging
+import argparse
+from pathlib import Path
+from typing import Dict, List, Optional
+from colorama import init, Fore, Style
+from tqdm import tqdm
+
+from src.document_classifier import DocumentClassifier
+from src.folder_organizer import FolderOrganizer
+from src.data_extractor import DataExtractor
+from src.utils import setup_logging, load_config
+from src.accounting_core import AccountingCoreProcessor
+from src.bulk_loader import BulkDocumentLoader
+from src.ai_processor import AIDocumentProcessor
+from src.working_papers import WorkingPapersGenerator
+from src.comprehensive_audit_papers import ComprehensiveAuditPapers
+from src.final_audit_module import FinalAuditModule
+from src.materiality_calculator import MaterialityCalculator
+from src.risk_matrix import RiskMatrix
+from src.work_program_generator import WorkProgramGenerator
+from src.questionnaires import AuditQuestionnaires
+from src.analytical_review import AnalyticalReview
+from src.circularization_automation import CircularizationAutomation
+from src.area_summaries import generate_area_summaries
+
+# Phase 2: Emergency Control and Auto-Recovery
+from src.emergency_control import (
+    EmergencyController, 
+    AutoRecovery, 
+    SafeExecutor,
+    EmergencyStop,
+    get_emergency_controller,
+    get_safe_executor,
+    check_emergency_stop,
+    print_emergency_help
+)
+
+# Initialize colorama
+init(autoreset=True)
+
+
+class AuditDocumentSystem:
+    """Main audit document processing system with emergency control"""
+    
+    def __init__(self, config_path: str = "config.json"):
+        """Initialize the audit system"""
+        self.config = load_config(config_path)
+        self.logger = setup_logging()
+        
+        print(f"\n{Fore.CYAN}{'='*60}")
+        print(f"{Fore.CYAN}  SISTEMA DE PROCESAMIENTO DE DOCUMENTOS DE AUDITORÍA")
+        print(f"{Fore.CYAN}{'='*60}\n")
+        
+        # Phase 2: Initialize emergency control system
+        self.emergency_controller = get_emergency_controller()
+        self.safe_executor = get_safe_executor()
+        print(f"{Fore.GREEN}✓ Control de emergencia inicializado (Ctrl+C para detener)")
+        
+        # Initialize core components
+        self.logger.info("Initializing system components...")
+        
+        # Accounting core (PRIORITY)
+        self.accounting = AccountingCoreProcessor(self.config)
+        print(f"{Fore.GREEN}✓ Núcleo contable inicializado")
+        
+        # Document processors
+        self.classifier = DocumentClassifier(self.config)
+        self.organizer = FolderOrganizer(self.config)
+        self.extractor = DataExtractor(self.config)
+        print(f"{Fore.GREEN}✓ Procesadores de documentos inicializados")
+        
+        # AI processor
+        self.ai_processor = AIDocumentProcessor(self.config)
+        print(f"{Fore.GREEN}✓ Procesador de IA inicializado")
+        
+        # Bulk loader
+        self.bulk_loader = BulkDocumentLoader(self.config)
+        print(f"{Fore.GREEN}✓ Cargador masivo inicializado")
+        
+        # Working papers generator
+        self.working_papers = WorkingPapersGenerator(self.config, self.accounting)
+        print(f"{Fore.GREEN}✓ Generador de papeles de trabajo inicializado")
+        
+        # Comprehensive audit papers (materialidad, muestreo, todas las áreas)
+        self.comprehensive_papers = ComprehensiveAuditPapers(self.config, self.accounting)
+        print(f"{Fore.GREEN}✓ Generador completo de papeles de auditoría inicializado")
+        
+        # Questionnaires and analytical review (NEW)
+        self.questionnaires = AuditQuestionnaires(self.accounting, self.config['working_papers']['output_dir'])
+        print(f"{Fore.GREEN}✓ Cuestionarios de auditoría inicializados")
+        
+        self.analytical_review = AnalyticalReview(self.accounting, self.config['working_papers']['output_dir'])
+        print(f"{Fore.GREEN}✓ Revisión analítica y ratios inicializados")
+        
+        # Circularization automation (NEW)
+        self.circularization = CircularizationAutomation(self.accounting, self.config['working_papers']['output_dir'])
+        print(f"{Fore.GREEN}✓ Sistema automatizado de circularización inicializado")
+        
+        # Setup directories
+        self._setup_directories()
+        
+        print(f"\n{Fore.CYAN}Sistema listo para procesar documentos\n")
+    
+    def _setup_directories(self):
+        """Create necessary directories"""
+        directories = [
+            Path(self.config['input_folder']),
+            Path(self.config['output_folder']),
+            Path(self.config['working_papers']['output_dir']),
+            Path('logs'),
+            Path('backup')
+        ]
+        
+        for directory in directories:
+            directory.mkdir(exist_ok=True)
+        
+        # Create subfolders for each document type
+        output_dir = Path(self.config['output_folder'])
+        for doc_type in self.config['document_types'].keys():
+            (output_dir / doc_type).mkdir(exist_ok=True)
+    
+    def load_accounting_core(self, accounting_files: Dict[int, Dict[str, Path]], company_info: Optional[Dict] = None):
+        """
+        PRIORITY: Load balance sheets and general ledgers first
+        
+        Args:
+            accounting_files: Dictionary mapping year to {'balance': path, 'ledger': path}
+            company_info: Company information
+        """
+        print(f"\n{Fore.YELLOW}{'='*60}")
+        print(f"{Fore.YELLOW}  FASE 1: CARGA DE DOCUMENTOS CONTABLES (PRIORITARIA)")
+        print(f"{Fore.YELLOW}{'='*60}\n")
+        
+        self.logger.info("Starting priority loading of accounting core documents")
+        
+        # Load accounting data
+        results = self.accounting.load_multiple_periods(accounting_files, company_info)
+        
+        # Display results
+        print(f"\n{Fore.CYAN}Resumen de carga:")
+        print(f"  Ejercicios procesados: {results['summary']['total_years']}")
+        print(f"  {Fore.GREEN}Exitosos: {results['summary']['successful']}")
+        print(f"  {Fore.RED}Fallidos: {results['summary']['failed']}")
+        
+        if results['errors']:
+            print(f"\n{Fore.RED}Errores detectados:")
+            for error in results['errors']:
+                print(f"  - {error}")
+        
+        # Generate working papers for loaded periods
+        print(f"\n{Fore.CYAN}Generando papeles de trabajo...")
+        
+        for period_result in results['periods']:
+            year = period_result['year']
+            if period_result['balance'] and period_result['balance']['status'] == 'success':
+                wp_path = self.working_papers.generate_balance_analysis(year)
+                if wp_path:
+                    print(f"  {Fore.GREEN}✓ Papel de trabajo generado: {wp_path}")
+        
+        # Generate audit areas summary for current year
+        if results['periods']:
+            current_year = max(p['year'] for p in results['periods'])
+            areas_path = self.working_papers.generate_audit_areas_summary(current_year)
+            if areas_path:
+                print(f"  {Fore.GREEN}✓ Resumen de áreas de auditoría: {areas_path}")
+        
+        print(f"\n{Fore.GREEN}✓ Documentos contables cargados correctamente")
+        print(f"{Fore.CYAN}  Base de datos contable lista para consultas\n")
+        
+        return results
+    
+    def process_bulk_documents(self, directory: Path, recursive: bool = True):
+        """
+        PHASE 2: Process all other documents in bulk
+        
+        Args:
+            directory: Directory containing documents
+            recursive: Whether to scan subdirectories
+        """
+        print(f"\n{Fore.YELLOW}{'='*60}")
+        print(f"{Fore.YELLOW}  FASE 2: PROCESAMIENTO MASIVO DE DOCUMENTOS")
+        print(f"{Fore.YELLOW}{'='*60}\n")
+        
+        self.logger.info(f"Starting bulk document processing from {directory}")
+        
+        def process_document(task):
+            """Process a single document"""
+            try:
+                file_path = task.file_path
+                
+                # Classify document
+                classification = self.classifier.classify_document(file_path)
+                doc_type = classification['document_type']
+                
+                # Use AI classification if confidence is low
+                if classification['confidence'] < 0.6:
+                    # Extract text and use AI
+                    text = self.classifier._extract_text(file_path)
+                    if text:
+                        ai_result = self.ai_processor.classify_with_ai(
+                            text,
+                            list(self.config['document_types'].keys())
+                        )
+                        if ai_result['confidence'] > classification['confidence']:
+                            doc_type = ai_result['document_type']
+                            classification.update(ai_result)
+                
+                # Organize document
+                new_path = self.organizer.organize_document(file_path, doc_type)
+                
+                # Extract data
+                extraction_result = None
+                if doc_type != 'unknown':
+                    extraction_result = self.extractor.extract_data(new_path, doc_type)
+                
+                return {
+                    'status': 'success',
+                    'file_path': str(file_path),
+                    'document_type': doc_type,
+                    'confidence': classification['confidence'],
+                    'new_path': str(new_path),
+                    'extraction': extraction_result
+                }
+                
+            except Exception as e:
+                self.logger.error(f"Failed to process {task.file_path}: {e}")
+                return {
+                    'status': 'error',
+                    'file_path': str(task.file_path),
+                    'error': str(e)
+                }
+        
+        def progress_callback(processed, total, result):
+            """Progress callback"""
+            percentage = (processed / total) * 100
+            print(f"\r{Fore.CYAN}Progreso: {processed}/{total} ({percentage:.1f}%) - "
+                  f"Último: {Path(result['file_path']).name}", end='')
+        
+        # Process documents
+        results = self.bulk_loader.load_documents_bulk(
+            directory,
+            process_document,
+            progress_callback,
+            recursive
+        )
+        
+        print("\n")  # New line after progress
+        
+        # Display results
+        summary = results['summary']
+        print(f"\n{Fore.CYAN}Resumen de procesamiento:")
+        print(f"  Total archivos: {summary['total_files']}")
+        print(f"  {Fore.GREEN}Procesados: {summary['processed']}")
+        print(f"  {Fore.RED}Fallidos: {summary['failed']}")
+        print(f"  {Fore.YELLOW}Omitidos (duplicados): {summary['skipped']}")
+        print(f"  Tamaño total: {summary['total_size_mb']:.2f} MB")
+        print(f"  Duración: {summary['duration_seconds']:.2f} segundos")
+        print(f"  Velocidad: {summary['documents_per_second']:.2f} docs/seg")
+        
+        # Document type distribution
+        if results['completed']:
+            type_counts = {}
+            for result in results['completed']:
+                doc_type = result.get('document_type', 'unknown')
+                type_counts[doc_type] = type_counts.get(doc_type, 0) + 1
+            
+            print(f"\n{Fore.CYAN}Distribución por tipo:")
+            for doc_type, count in sorted(type_counts.items(), key=lambda x: x[1], reverse=True):
+                print(f"  {doc_type}: {count}")
+        
+        print(f"\n{Fore.GREEN}✓ Procesamiento masivo completado\n")
+        
+        return results
+    
+    def query_account(self, account_code: str, year: Optional[int] = None):
+        """Query account information"""
+        print(f"\n{Fore.CYAN}Consultando cuenta {account_code}...")
+        
+        accounts = self.accounting.query_account(account_code, year)
+        
+        if not accounts:
+            print(f"{Fore.RED}No se encontraron datos para la cuenta {account_code}")
+            return
+        
+        print(f"\n{Fore.GREEN}Resultados:")
+        for acc in accounts:
+            print(f"\n  Cuenta: {acc['account_code']}")
+            print(f"  Nombre: {acc['account_name']}")
+            print(f"  Saldo Final: {acc['saldo_final']:,.2f} €")
+            print(f"  Suma Debe: {acc['suma_debe']:,.2f} €")
+            print(f"  Suma Haber: {acc['suma_haber']:,.2f} €")
+    
+    def generate_account_detail(self, account_code: str, year: int):
+        """Generate detailed working paper for account"""
+        print(f"\n{Fore.CYAN}Generando papel de trabajo para cuenta {account_code}...")
+        
+        wp_path = self.working_papers.generate_account_detail(account_code, year)
+        
+        if wp_path:
+            print(f"{Fore.GREEN}✓ Papel de trabajo generado: {wp_path}")
+        else:
+            print(f"{Fore.RED}✗ No se pudo generar el papel de trabajo")
+    
+    def generate_complete_audit_package(self, year: int, entity_type: str = 'mercantil',
+                                       entity_info: Optional[Dict] = None):
+        """
+        Generate complete audit package including:
+        - Risk matrix
+        - Work programs for all areas
+        - All audit working papers
+        
+        Args:
+            year: Audit year
+            entity_type: 'mercantil', 'esal', 'pyme'
+            entity_info: Additional entity information
+        """
+        print(f"\n{Fore.CYAN}{'='*60}")
+        print(f"{Fore.CYAN}  GENERACIÓN COMPLETA DE PAQUETE DE AUDITORÍA")
+        print(f"{Fore.CYAN}{'='*60}")
+        print(f"{Fore.YELLOW}  ⚠️  Presione Ctrl+C en cualquier momento para detener")
+        print(f"{Fore.CYAN}{'='*60}\n")
+        
+        if entity_info is None:
+            entity_info = {
+                'first_year_audit': False,
+                'going_concern_issues': False,
+                'significant_changes': False
+            }
+        
+        try:
+            # Check for emergency stop before each step
+            check_emergency_stop()
+            
+            # Step 1: Calculate materiality
+            print(f"{Fore.YELLOW}Paso 1: Calculando materialidad...")
+            materiality_calc = MaterialityCalculator(self.config, self.accounting)
+            materiality = materiality_calc.calculate_materiality(year, entity_type)
+            
+            if 'error' in materiality:
+                print(f"{Fore.RED}Error calculando materialidad: {materiality['error']}")
+                return
+            
+            print(f"{Fore.GREEN}✓ Materialidad calculada:")
+            print(f"  Global: {materiality['overall_materiality']:,.2f} €")
+            print(f"  Ejecución: {materiality['performance_materiality']:,.2f} €")
+            print(f"  Trivialidad: {materiality['trivial_threshold']:,.2f} €")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 2: Generate risk matrix
+            print(f"\n{Fore.YELLOW}Paso 2: Generando matriz de riesgos...")
+            risk_matrix_gen = RiskMatrix(self.config, self.accounting, materiality)
+            risk_matrix = risk_matrix_gen.generate_risk_matrix(year, entity_info)
+            risk_matrix_file = risk_matrix_gen.export_to_excel(risk_matrix, year)
+            print(f"{Fore.GREEN}✓ Matriz de riesgos generada: {Path(risk_matrix_file).name}")
+            
+            # Display risk summary
+            print(f"\n{Fore.CYAN}Resumen de riesgos por área:")
+            high_risk = risk_matrix[risk_matrix['combined_risk'] == 'high']
+            medium_risk = risk_matrix[risk_matrix['combined_risk'] == 'medium']
+            
+            if len(high_risk) > 0:
+                print(f"\n  {Fore.RED}Áreas de ALTO RIESGO ({len(high_risk)}):")
+                for _, area in high_risk.iterrows():
+                    print(f"    - {area['area_name']} (Significatividad: {area['significance_pct']:.1f}%)")
+            
+            if len(medium_risk) > 0:
+                print(f"\n  {Fore.YELLOW}Áreas de RIESGO MEDIO ({len(medium_risk)}):")
+                for _, area in medium_risk.iterrows():
+                    print(f"    - {area['area_name']} (Significatividad: {area['significance_pct']:.1f}%)")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 3: Generate work programs
+            print(f"\n{Fore.YELLOW}Paso 3: Generando programas de trabajo...")
+            work_program_gen = WorkProgramGenerator(self.config, risk_matrix)
+            work_programs = work_program_gen.generate_all_work_programs(year)
+            print(f"{Fore.GREEN}✓ Generados {len(work_programs)} programas de trabajo")
+        
+            # Save custom procedures template
+            template_path = work_program_gen.save_custom_procedures_template()
+            print(f"{Fore.CYAN}  Plantilla de procedimientos guardada: {Path(template_path).name}")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 4: Generate questionnaires
+            print(f"\n{Fore.YELLOW}Paso 4: Generando cuestionarios de auditoría...")
+            questionnaire_files = self.questionnaires.generate_all_questionnaires(year)
+            print(f"{Fore.GREEN}✓ Generados {len(questionnaire_files)} cuestionarios")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 5: Generate analytical review and financial ratios
+            print(f"\n{Fore.YELLOW}Paso 5: Generando revisión analítica y ratios financieros...")
+            # Determine years for comparison (current + 2 prior years if available)
+            compare_years = [year, year-1, year-2] if year >= 2 else [year]
+            sector = entity_info.get('sector', 'default')
+            analytical_file = self.analytical_review.generate_analytical_review_workpaper(
+                year, 
+                sector, 
+                compare_years
+            )
+            print(f"{Fore.GREEN}✓ Revisión analítica generada: {Path(analytical_file).name}")
+            
+            # Display key ratios
+            ratios = self.analytical_review.calculate_financial_ratios(year)
+            if ratios and '_values' in ratios:
+                print(f"\n{Fore.CYAN}Ratios clave del ejercicio:")
+                print(f"  Liquidez: {ratios.get('ratio_liquidez', 0):.2f}")
+                print(f"  Endeudamiento: {ratios.get('ratio_endeudamiento', 0):.2%}")
+                print(f"  ROE: {ratios.get('roe', 0):.2%}")
+                print(f"  Margen Neto: {ratios.get('margen_neto', 0):.2%}")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 5.5: Generate circularization working papers (NEW)
+            print(f"\n{Fore.YELLOW}Paso 5.5: Generando papeles de circularización automatizada...")
+            circularization_files = []
+            for confirmation_type in ['clientes', 'proveedores', 'bancos']:
+                check_emergency_stop()  # Check within loop
+                try:
+                    circ_file = self.circularization.process_circularization(
+                        year, 
+                        confirmation_type, 
+                        responses_file=None,  # No responses file - will apply alternative procedures
+                        entity_type=entity_type
+                    )
+                    if circ_file:
+                        circularization_files.append(circ_file)
+                        print(f"{Fore.GREEN}  ✓ Circularización {confirmation_type}: {Path(circ_file).name}")
+                except EmergencyStop:
+                    raise  # Re-raise emergency stop
+                except Exception as e:
+                    print(f"{Fore.YELLOW}  ⚠ No hay saldos para circularización de {confirmation_type}")
+            
+            if circularization_files:
+                print(f"{Fore.GREEN}✓ Generados {len(circularization_files)} papeles de circularización")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 5.7: Generate area summaries with adjustments and reclassifications (NEW)
+            print(f"\n{Fore.YELLOW}Paso 5.7: Generando sumarias de áreas con ajustes y reclasificaciones...")
+            output_dir = self.config.get('working_papers', {}).get('output_dir', './papeles_trabajo')
+            area_summary_files = generate_area_summaries(self.accounting, year, output_dir, entity_type)
+            print(f"{Fore.GREEN}✓ Generadas {len(area_summary_files)} sumarias de áreas")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 6: Generate all audit working papers
+            print(f"\n{Fore.YELLOW}Paso 6: Generando papeles de trabajo de auditoría...")
+            audit_results = self.comprehensive_papers.generate_complete_audit_package(
+                year,
+                entity_type
+            )
+            
+            print(f"{Fore.GREEN}✓ Papeles de trabajo generados: {audit_results.get('total_files', 0)} archivos")
+            
+            # Summary
+            print(f"\n{Fore.CYAN}{'='*60}")
+            print(f"{Fore.CYAN}  RESUMEN DEL PAQUETE DE AUDITORÍA")
+            print(f"{Fore.CYAN}{'='*60}\n")
+            print(f"  Ejercicio: {year}")
+            print(f"  Tipo de entidad: {entity_type.upper()}")
+            print(f"  Materialidad global: {materiality['overall_materiality']:,.2f} €")
+            print(f"  Áreas de alto riesgo: {len(high_risk)}")
+            print(f"  Áreas de riesgo medio: {len(medium_risk)}")
+            print(f"  Programas de trabajo: {len(work_programs)}")
+            print(f"  Cuestionarios: {len(questionnaire_files)}")
+            print(f"  Revisión analítica: 1 archivo")
+            print(f"  Circularización: {len(circularization_files)} archivos")
+            print(f"  Sumarias de áreas: {len(area_summary_files)} archivos")
+            print(f"  Papeles de trabajo: {audit_results.get('total_files', 0)}")
+            total_files_count = 1 + len(work_programs) + len(questionnaire_files) + 1 + len(circularization_files) + len(area_summary_files) + audit_results.get('total_files', 0)
+            print(f"\n  {Fore.YELLOW}TOTAL ARCHIVOS GENERADOS: {total_files_count}")
+            print(f"\n{Fore.GREEN}✓ Paquete completo de auditoría generado correctamente\n")
+            
+            return {
+                'materiality': materiality,
+                'risk_matrix_file': risk_matrix_file,
+                'work_programs': work_programs,
+                'questionnaires': questionnaire_files,
+                'analytical_review': analytical_file,
+                'circularization': circularization_files,
+                'area_summaries': area_summary_files,
+                'audit_papers': audit_results,
+                'total_files': total_files_count
+            }
+            
+        except EmergencyStop:
+            print(f"\n{Fore.YELLOW}⚠️  Generación de paquete detenida por el usuario")
+            print(f"{Fore.CYAN}   Los archivos generados hasta el momento se han guardado")
+            
+            # Save error report
+            self.emergency_controller.save_error_report()
+            
+            return {
+                'status': 'stopped',
+                'message': 'Proceso detenido por parada de emergencia'
+            }
+        except Exception as e:
+            print(f"\n{Fore.RED}❌ Error durante la generación del paquete: {str(e)}")
+            
+            # Log error and attempt recovery
+            self.emergency_controller.log_error(e, 'generate_complete_audit_package')
+            
+            # Get suggestions
+            from src.emergency_control import AutoRecovery
+            recovery = AutoRecovery()
+            suggestions = recovery.get_recovery_suggestions(e, {'task': 'generate_complete_audit_package'})
+            
+            print(f"\n{Fore.YELLOW}Sugerencias de recuperación:")
+            for suggestion in suggestions:
+                print(f"  • {suggestion}")
+            
+            # Save error report
+            self.emergency_controller.save_error_report()
+            
+            return None
+    
+    def interactive_mode(self):
+        """Interactive mode for queries"""
+        print(f"\n{Fore.CYAN}{'='*60}")
+        print(f"{Fore.CYAN}  MODO INTERACTIVO")
+        print(f"{Fore.CYAN}{'='*60}\n")
+        print("Comandos disponibles:")
+        print("  query <cuenta> [año]  - Consultar saldo de cuenta")
+        print("  detail <cuenta> <año> - Generar papel de trabajo")
+        print("  wp <año>              - Generar papeles de trabajo del año")
+        print("  exit                  - Salir")
+        
+        while True:
+            try:
+                command = input(f"\n{Fore.YELLOW}> ").strip()
+                
+                if not command:
+                    continue
+                
+                parts = command.split()
+                cmd = parts[0].lower()
+                
+                if cmd == 'exit':
+                    break
+                
+                elif cmd == 'query':
+                    if len(parts) < 2:
+                        print(f"{Fore.RED}Uso: query <cuenta> [año]")
+                        continue
+                    account = parts[1]
+                    year = int(parts[2]) if len(parts) > 2 else None
+                    self.query_account(account, year)
+                
+                elif cmd == 'detail':
+                    if len(parts) < 3:
+                        print(f"{Fore.RED}Uso: detail <cuenta> <año>")
+                        continue
+                    account = parts[1]
+                    year = int(parts[2])
+                    self.generate_account_detail(account, year)
+                
+                elif cmd == 'wp':
+                    if len(parts) < 2:
+                        print(f"{Fore.RED}Uso: wp <año>")
+                        continue
+                    year = int(parts[1])
+                    wp_path = self.working_papers.generate_balance_analysis(year)
+                    if wp_path:
+                        print(f"{Fore.GREEN}✓ Papeles generados: {wp_path}")
+                
+                else:
+                    print(f"{Fore.RED}Comando desconocido: {cmd}")
+            
+            except KeyboardInterrupt:
+                print("\n")
+                break
+            except Exception as e:
+                print(f"{Fore.RED}Error: {e}")
+
+
+def main():
+    """Main entry point"""
+    parser = argparse.ArgumentParser(
+        description='Sistema de Procesamiento de Documentos de Auditoría'
+    )
+    parser.add_argument(
+        '--config',
+        default='config.json',
+        help='Ruta al archivo de configuración'
+    )
+    parser.add_argument(
+        '--load-accounting',
+        action='store_true',
+        help='Cargar balances y diarios (modo prioritario)'
+    )
+    parser.add_argument(
+        '--process-bulk',
+        action='store_true',
+        help='Procesar documentos masivamente'
+    )
+    parser.add_argument(
+        '--interactive',
+        '-i',
+        action='store_true',
+        help='Modo interactivo'
+    )
+    parser.add_argument(
+        '--input-dir',
+        type=Path,
+        default='./input_documents',
+        help='Directorio de entrada'
+    )
+    parser.add_argument(
+        '--generate-audit-papers',
+        type=int,
+        metavar='YEAR',
+        help='Generar paquete completo de papeles de trabajo para el año especificado'
+    )
+    parser.add_argument(
+        '--entity-type',
+        choices=['mercantil', 'esal', 'pyme'],
+        default='mercantil',
+        help='Tipo de entidad para papeles de trabajo'
+    )
+    
+    args = parser.parse_args()
+    
+    try:
+        # Initialize system
+        system = AuditDocumentSystem(args.config)
+        
+        if args.load_accounting:
+            # Example: Load accounting files
+            # User should provide proper file paths
+            print(f"\n{Fore.YELLOW}Para cargar documentos contables, proporcione:")
+            print("  - Balances de sumas y saldos (Excel)")
+            print("  - Diarios contables (Excel)")
+            print("  - Para los últimos 3 ejercicios (o el ejercicio a auditar)\n")
+            
+            # This should be configured by the user
+            # Example structure:
+            # accounting_files = {
+            #     2023: {
+            #         'balance': Path('balances/balance_2023.xlsx'),
+            #         'ledger': Path('diarios/diario_2023.xlsx')
+            #     },
+            #     2022: {
+            #         'balance': Path('balances/balance_2022.xlsx'),
+            #         'ledger': Path('diarios/diario_2022.xlsx')
+            #     }
+            # }
+            # system.load_accounting_core(accounting_files)
+        
+        if args.process_bulk:
+            system.process_bulk_documents(args.input_dir)
+        
+        if args.generate_audit_papers:
+            # Generate complete audit package including risk matrix and work programs
+            results = system.generate_complete_audit_package(
+                args.generate_audit_papers,
+                args.entity_type
+            )
+        
+        if args.interactive:
+            system.interactive_mode()
+        
+        if not (args.load_accounting or args.process_bulk or args.interactive or args.generate_audit_papers):
+            # Default: process all
+            print(f"\n{Fore.YELLOW}Modo por defecto: Procesamiento completo")
+            print("Para opciones específicas, use --help\n")
+            
+            # Load accounting first if files are available
+            # Then process other documents
+            system.process_bulk_documents(args.input_dir)
+    
+    except EmergencyStop:
+        print(f"\n{Fore.YELLOW}🚨 Proceso detenido por parada de emergencia")
+        print(f"{Fore.CYAN}   Los archivos procesados se han guardado")
+        
+        # Save error report
+        controller = get_emergency_controller()
+        report_path = controller.save_error_report()
+        print(f"{Fore.CYAN}   Informe de errores guardado: {report_path}")
+        
+        sys.exit(0)
+    except KeyboardInterrupt:
+        print(f"\n\n{Fore.YELLOW}Proceso interrumpido por el usuario")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n{Fore.RED}Error fatal: {e}")
+        logging.exception("Fatal error")
+        
+        # Get recovery suggestions
+        try:
+            from src.emergency_control import AutoRecovery
+            recovery = AutoRecovery()
+            suggestions = recovery.get_recovery_suggestions(e)
+            print(f"\n{Fore.YELLOW}Sugerencias de recuperación:")
+            for suggestion in suggestions:
+                print(f"  • {suggestion}")
+        except:
+            pass
+        
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    # Display emergency control help on startup
+    print_emergency_help()
+    main()

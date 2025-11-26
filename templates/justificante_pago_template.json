@@ -1,0 +1,58 @@
+{
+  "name": "Justificante de Pago Template",
+  "description": "Template for payment receipt/proof data extraction",
+  "fields": {
+    "numero_operacion": {
+      "patterns": [
+        "n[úu]mero\\s+operaci[óo]n[\\s:]*([A-Z0-9\\-\\/]+)",
+        "referencia[\\s:]*([A-Z0-9\\-\\/]+)",
+        "transaction[\\s#]*:?\\s*([A-Z0-9\\-\\/]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "fecha": {
+      "patterns": [
+        "fecha[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "date[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "date",
+      "required": true
+    },
+    "importe": {
+      "patterns": [
+        "importe[\\s:]*([0-9,\\.]+)[\\s]*€?",
+        "amount[\\s:]*([0-9,\\.]+)",
+        "total[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    },
+    "ordenante": {
+      "patterns": [
+        "ordenante[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "de[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "from[\\s:]*([A-Z][A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "beneficiario": {
+      "patterns": [
+        "beneficiario[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "a\\s+favor\\s+de[\\s:]*([A-Z][A-Za-z\\s]+)",
+        "to[\\s:]*([A-Z][A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": false
+    },
+    "concepto": {
+      "patterns": [
+        "concepto[\\s:]*([A-Za-z0-9\\s]+)",
+        "description[\\s:]*([A-Za-z0-9\\s]+)"
+      ],
+      "type": "string",
+      "required": false
+    }
+  }
+}

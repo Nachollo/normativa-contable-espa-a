@@ -1,0 +1,47 @@
+{
+  "name": "Nómina Template",
+  "description": "Template for payroll data extraction",
+  "fields": {
+    "empleado": {
+      "patterns": [
+        "empleado[\\s:]*([A-Za-z\\s]+)",
+        "employee[\\s:]*([A-Za-z\\s]+)",
+        "worker[\\s:]*([A-Za-z\\s]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "periodo": {
+      "patterns": [
+        "periodo[\\s:]*([A-Za-z0-9\\s\\/\\-]+)",
+        "period[\\s:]*([A-Za-z0-9\\s\\/\\-]+)"
+      ],
+      "type": "string",
+      "required": true
+    },
+    "salario_bruto": {
+      "patterns": [
+        "salario\\s+bruto[\\s:]*([0-9,\\.]+)",
+        "gross\\s+salary[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    },
+    "deducciones": {
+      "patterns": [
+        "deducciones[\\s:]*([0-9,\\.]+)",
+        "deductions[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": false
+    },
+    "salario_neto": {
+      "patterns": [
+        "salario\\s+neto[\\s:]*([0-9,\\.]+)",
+        "net\\s+salary[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    }
+  }
+}

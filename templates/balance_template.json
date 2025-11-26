@@ -1,0 +1,38 @@
+{
+  "name": "Balance Template",
+  "description": "Template for balance sheet data extraction",
+  "fields": {
+    "fecha_balance": {
+      "patterns": [
+        "balance\\s+al[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})",
+        "as\\s+of[\\s:]*(\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{2,4})"
+      ],
+      "type": "date",
+      "required": true
+    },
+    "activo_total": {
+      "patterns": [
+        "activo\\s+total[\\s:]*([0-9,\\.]+)",
+        "total\\s+assets[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    },
+    "pasivo_total": {
+      "patterns": [
+        "pasivo\\s+total[\\s:]*([0-9,\\.]+)",
+        "total\\s+liabilities[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    },
+    "patrimonio": {
+      "patterns": [
+        "patrimonio[\\s:]*([0-9,\\.]+)",
+        "equity[\\s:]*([0-9,\\.]+)"
+      ],
+      "type": "decimal",
+      "required": true
+    }
+  }
+}
