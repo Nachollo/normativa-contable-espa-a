@@ -2,6 +2,11 @@
 """
 Audit Document Processing System
 Main application with priority loading for accounting core documents
+
+Phase 2 Features:
+- Emergency stop button (Ctrl+C)
+- AI-powered auto-recovery
+- Graceful error handling
 """
 
 import os
@@ -32,12 +37,24 @@ from src.analytical_review import AnalyticalReview
 from src.circularization_automation import CircularizationAutomation
 from src.area_summaries import generate_area_summaries
 
+# Phase 2: Emergency Control and Auto-Recovery
+from src.emergency_control import (
+    EmergencyController, 
+    AutoRecovery, 
+    SafeExecutor,
+    EmergencyStop,
+    get_emergency_controller,
+    get_safe_executor,
+    check_emergency_stop,
+    print_emergency_help
+)
+
 # Initialize colorama
 init(autoreset=True)
 
 
 class AuditDocumentSystem:
-    """Main audit document processing system"""
+    """Main audit document processing system with emergency control"""
     
     def __init__(self, config_path: str = "config.json"):
         """Initialize the audit system"""
@@ -47,6 +64,11 @@ class AuditDocumentSystem:
         print(f"\n{Fore.CYAN}{'='*60}")
         print(f"{Fore.CYAN}  SISTEMA DE PROCESAMIENTO DE DOCUMENTOS DE AUDITORÍA")
         print(f"{Fore.CYAN}{'='*60}\n")
+        
+        # Phase 2: Initialize emergency control system
+        self.emergency_controller = get_emergency_controller()
+        self.safe_executor = get_safe_executor()
+        print(f"{Fore.GREEN}✓ Control de emergencia inicializado (Ctrl+C para detener)")
         
         # Initialize core components
         self.logger.info("Initializing system components...")
@@ -308,6 +330,8 @@ class AuditDocumentSystem:
         """
         print(f"\n{Fore.CYAN}{'='*60}")
         print(f"{Fore.CYAN}  GENERACIÓN COMPLETA DE PAQUETE DE AUDITORÍA")
+        print(f"{Fore.CYAN}{'='*60}")
+        print(f"{Fore.YELLOW}  ⚠️  Presione Ctrl+C en cualquier momento para detener")
         print(f"{Fore.CYAN}{'='*60}\n")
         
         if entity_info is None:
@@ -317,143 +341,195 @@ class AuditDocumentSystem:
                 'significant_changes': False
             }
         
-        # Step 1: Calculate materiality
-        print(f"{Fore.YELLOW}Paso 1: Calculando materialidad...")
-        materiality_calc = MaterialityCalculator(self.config, self.accounting)
-        materiality = materiality_calc.calculate_materiality(year, entity_type)
+        try:
+            # Check for emergency stop before each step
+            check_emergency_stop()
+            
+            # Step 1: Calculate materiality
+            print(f"{Fore.YELLOW}Paso 1: Calculando materialidad...")
+            materiality_calc = MaterialityCalculator(self.config, self.accounting)
+            materiality = materiality_calc.calculate_materiality(year, entity_type)
+            
+            if 'error' in materiality:
+                print(f"{Fore.RED}Error calculando materialidad: {materiality['error']}")
+                return
+            
+            print(f"{Fore.GREEN}✓ Materialidad calculada:")
+            print(f"  Global: {materiality['overall_materiality']:,.2f} €")
+            print(f"  Ejecución: {materiality['performance_materiality']:,.2f} €")
+            print(f"  Trivialidad: {materiality['trivial_threshold']:,.2f} €")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 2: Generate risk matrix
+            print(f"\n{Fore.YELLOW}Paso 2: Generando matriz de riesgos...")
+            risk_matrix_gen = RiskMatrix(self.config, self.accounting, materiality)
+            risk_matrix = risk_matrix_gen.generate_risk_matrix(year, entity_info)
+            risk_matrix_file = risk_matrix_gen.export_to_excel(risk_matrix, year)
+            print(f"{Fore.GREEN}✓ Matriz de riesgos generada: {Path(risk_matrix_file).name}")
+            
+            # Display risk summary
+            print(f"\n{Fore.CYAN}Resumen de riesgos por área:")
+            high_risk = risk_matrix[risk_matrix['combined_risk'] == 'high']
+            medium_risk = risk_matrix[risk_matrix['combined_risk'] == 'medium']
+            
+            if len(high_risk) > 0:
+                print(f"\n  {Fore.RED}Áreas de ALTO RIESGO ({len(high_risk)}):")
+                for _, area in high_risk.iterrows():
+                    print(f"    - {area['area_name']} (Significatividad: {area['significance_pct']:.1f}%)")
+            
+            if len(medium_risk) > 0:
+                print(f"\n  {Fore.YELLOW}Áreas de RIESGO MEDIO ({len(medium_risk)}):")
+                for _, area in medium_risk.iterrows():
+                    print(f"    - {area['area_name']} (Significatividad: {area['significance_pct']:.1f}%)")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 3: Generate work programs
+            print(f"\n{Fore.YELLOW}Paso 3: Generando programas de trabajo...")
+            work_program_gen = WorkProgramGenerator(self.config, risk_matrix)
+            work_programs = work_program_gen.generate_all_work_programs(year)
+            print(f"{Fore.GREEN}✓ Generados {len(work_programs)} programas de trabajo")
         
-        if 'error' in materiality:
-            print(f"{Fore.RED}Error calculando materialidad: {materiality['error']}")
-            return
-        
-        print(f"{Fore.GREEN}✓ Materialidad calculada:")
-        print(f"  Global: {materiality['overall_materiality']:,.2f} €")
-        print(f"  Ejecución: {materiality['performance_materiality']:,.2f} €")
-        print(f"  Trivialidad: {materiality['trivial_threshold']:,.2f} €")
-        
-        # Step 2: Generate risk matrix
-        print(f"\n{Fore.YELLOW}Paso 2: Generando matriz de riesgos...")
-        risk_matrix_gen = RiskMatrix(self.config, self.accounting, materiality)
-        risk_matrix = risk_matrix_gen.generate_risk_matrix(year, entity_info)
-        risk_matrix_file = risk_matrix_gen.export_to_excel(risk_matrix, year)
-        print(f"{Fore.GREEN}✓ Matriz de riesgos generada: {Path(risk_matrix_file).name}")
-        
-        # Display risk summary
-        print(f"\n{Fore.CYAN}Resumen de riesgos por área:")
-        high_risk = risk_matrix[risk_matrix['combined_risk'] == 'high']
-        medium_risk = risk_matrix[risk_matrix['combined_risk'] == 'medium']
-        
-        if len(high_risk) > 0:
-            print(f"\n  {Fore.RED}Áreas de ALTO RIESGO ({len(high_risk)}):")
-            for _, area in high_risk.iterrows():
-                print(f"    - {area['area_name']} (Significatividad: {area['significance_pct']:.1f}%)")
-        
-        if len(medium_risk) > 0:
-            print(f"\n  {Fore.YELLOW}Áreas de RIESGO MEDIO ({len(medium_risk)}):")
-            for _, area in medium_risk.iterrows():
-                print(f"    - {area['area_name']} (Significatividad: {area['significance_pct']:.1f}%)")
-        
-        # Step 3: Generate work programs
-        print(f"\n{Fore.YELLOW}Paso 3: Generando programas de trabajo...")
-        work_program_gen = WorkProgramGenerator(self.config, risk_matrix)
-        work_programs = work_program_gen.generate_all_work_programs(year)
-        print(f"{Fore.GREEN}✓ Generados {len(work_programs)} programas de trabajo")
-        
-        # Save custom procedures template
-        template_path = work_program_gen.save_custom_procedures_template()
-        print(f"{Fore.CYAN}  Plantilla de procedimientos guardada: {Path(template_path).name}")
-        
-        # Step 4: Generate questionnaires
-        print(f"\n{Fore.YELLOW}Paso 4: Generando cuestionarios de auditoría...")
-        questionnaire_files = self.questionnaires.generate_all_questionnaires(year)
-        print(f"{Fore.GREEN}✓ Generados {len(questionnaire_files)} cuestionarios")
-        
-        # Step 5: Generate analytical review and financial ratios
-        print(f"\n{Fore.YELLOW}Paso 5: Generando revisión analítica y ratios financieros...")
-        # Determine years for comparison (current + 2 prior years if available)
-        compare_years = [year, year-1, year-2] if year >= 2 else [year]
-        sector = entity_info.get('sector', 'default')
-        analytical_file = self.analytical_review.generate_analytical_review_workpaper(
-            year, 
-            sector, 
-            compare_years
-        )
-        print(f"{Fore.GREEN}✓ Revisión analítica generada: {Path(analytical_file).name}")
-        
-        # Display key ratios
-        ratios = self.analytical_review.calculate_financial_ratios(year)
-        if ratios and '_values' in ratios:
-            print(f"\n{Fore.CYAN}Ratios clave del ejercicio:")
-            print(f"  Liquidez: {ratios.get('ratio_liquidez', 0):.2f}")
-            print(f"  Endeudamiento: {ratios.get('ratio_endeudamiento', 0):.2%}")
-            print(f"  ROE: {ratios.get('roe', 0):.2%}")
-            print(f"  Margen Neto: {ratios.get('margen_neto', 0):.2%}")
-        
-        # Step 5.5: Generate circularization working papers (NEW)
-        print(f"\n{Fore.YELLOW}Paso 5.5: Generando papeles de circularización automatizada...")
-        circularization_files = []
-        for confirmation_type in ['clientes', 'proveedores', 'bancos']:
-            try:
-                circ_file = self.circularization.process_circularization(
-                    year, 
-                    confirmation_type, 
-                    responses_file=None,  # No responses file - will apply alternative procedures
-                    entity_type=entity_type
-                )
-                if circ_file:
-                    circularization_files.append(circ_file)
-                    print(f"{Fore.GREEN}  ✓ Circularización {confirmation_type}: {Path(circ_file).name}")
-            except Exception as e:
-                print(f"{Fore.YELLOW}  ⚠ No hay saldos para circularización de {confirmation_type}")
-        
-        if circularization_files:
-            print(f"{Fore.GREEN}✓ Generados {len(circularization_files)} papeles de circularización")
-        
-        # Step 5.7: Generate area summaries with adjustments and reclassifications (NEW)
-        print(f"\n{Fore.YELLOW}Paso 5.7: Generando sumarias de áreas con ajustes y reclasificaciones...")
-        output_dir = self.config.get('working_papers', {}).get('output_dir', './papeles_trabajo')
-        area_summary_files = generate_area_summaries(self.accounting, year, output_dir, entity_type)
-        print(f"{Fore.GREEN}✓ Generadas {len(area_summary_files)} sumarias de áreas")
-        
-        # Step 6: Generate all audit working papers
-        print(f"\n{Fore.YELLOW}Paso 6: Generando papeles de trabajo de auditoría...")
-        audit_results = self.comprehensive_papers.generate_complete_audit_package(
-            year,
-            entity_type
-        )
-        
-        print(f"{Fore.GREEN}✓ Papeles de trabajo generados: {audit_results.get('total_files', 0)} archivos")
-        
-        # Summary
-        print(f"\n{Fore.CYAN}{'='*60}")
-        print(f"{Fore.CYAN}  RESUMEN DEL PAQUETE DE AUDITORÍA")
-        print(f"{Fore.CYAN}{'='*60}\n")
-        print(f"  Ejercicio: {year}")
-        print(f"  Tipo de entidad: {entity_type.upper()}")
-        print(f"  Materialidad global: {materiality['overall_materiality']:,.2f} €")
-        print(f"  Áreas de alto riesgo: {len(high_risk)}")
-        print(f"  Áreas de riesgo medio: {len(medium_risk)}")
-        print(f"  Programas de trabajo: {len(work_programs)}")
-        print(f"  Cuestionarios: {len(questionnaire_files)}")
-        print(f"  Revisión analítica: 1 archivo")
-        print(f"  Circularización: {len(circularization_files)} archivos")
-        print(f"  Sumarias de áreas: {len(area_summary_files)} archivos")
-        print(f"  Papeles de trabajo: {audit_results.get('total_files', 0)}")
-        total_files_count = 1 + len(work_programs) + len(questionnaire_files) + 1 + len(circularization_files) + len(area_summary_files) + audit_results.get('total_files', 0)
-        print(f"\n  {Fore.YELLOW}TOTAL ARCHIVOS GENERADOS: {total_files_count}")
-        print(f"\n{Fore.GREEN}✓ Paquete completo de auditoría generado correctamente\n")
-        
-        return {
-            'materiality': materiality,
-            'risk_matrix_file': risk_matrix_file,
-            'work_programs': work_programs,
-            'questionnaires': questionnaire_files,
-            'analytical_review': analytical_file,
-            'circularization': circularization_files,
-            'area_summaries': area_summary_files,
-            'audit_papers': audit_results,
-            'total_files': total_files_count
-        }
+            # Save custom procedures template
+            template_path = work_program_gen.save_custom_procedures_template()
+            print(f"{Fore.CYAN}  Plantilla de procedimientos guardada: {Path(template_path).name}")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 4: Generate questionnaires
+            print(f"\n{Fore.YELLOW}Paso 4: Generando cuestionarios de auditoría...")
+            questionnaire_files = self.questionnaires.generate_all_questionnaires(year)
+            print(f"{Fore.GREEN}✓ Generados {len(questionnaire_files)} cuestionarios")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 5: Generate analytical review and financial ratios
+            print(f"\n{Fore.YELLOW}Paso 5: Generando revisión analítica y ratios financieros...")
+            # Determine years for comparison (current + 2 prior years if available)
+            compare_years = [year, year-1, year-2] if year >= 2 else [year]
+            sector = entity_info.get('sector', 'default')
+            analytical_file = self.analytical_review.generate_analytical_review_workpaper(
+                year, 
+                sector, 
+                compare_years
+            )
+            print(f"{Fore.GREEN}✓ Revisión analítica generada: {Path(analytical_file).name}")
+            
+            # Display key ratios
+            ratios = self.analytical_review.calculate_financial_ratios(year)
+            if ratios and '_values' in ratios:
+                print(f"\n{Fore.CYAN}Ratios clave del ejercicio:")
+                print(f"  Liquidez: {ratios.get('ratio_liquidez', 0):.2f}")
+                print(f"  Endeudamiento: {ratios.get('ratio_endeudamiento', 0):.2%}")
+                print(f"  ROE: {ratios.get('roe', 0):.2%}")
+                print(f"  Margen Neto: {ratios.get('margen_neto', 0):.2%}")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 5.5: Generate circularization working papers (NEW)
+            print(f"\n{Fore.YELLOW}Paso 5.5: Generando papeles de circularización automatizada...")
+            circularization_files = []
+            for confirmation_type in ['clientes', 'proveedores', 'bancos']:
+                check_emergency_stop()  # Check within loop
+                try:
+                    circ_file = self.circularization.process_circularization(
+                        year, 
+                        confirmation_type, 
+                        responses_file=None,  # No responses file - will apply alternative procedures
+                        entity_type=entity_type
+                    )
+                    if circ_file:
+                        circularization_files.append(circ_file)
+                        print(f"{Fore.GREEN}  ✓ Circularización {confirmation_type}: {Path(circ_file).name}")
+                except EmergencyStop:
+                    raise  # Re-raise emergency stop
+                except Exception as e:
+                    print(f"{Fore.YELLOW}  ⚠ No hay saldos para circularización de {confirmation_type}")
+            
+            if circularization_files:
+                print(f"{Fore.GREEN}✓ Generados {len(circularization_files)} papeles de circularización")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 5.7: Generate area summaries with adjustments and reclassifications (NEW)
+            print(f"\n{Fore.YELLOW}Paso 5.7: Generando sumarias de áreas con ajustes y reclasificaciones...")
+            output_dir = self.config.get('working_papers', {}).get('output_dir', './papeles_trabajo')
+            area_summary_files = generate_area_summaries(self.accounting, year, output_dir, entity_type)
+            print(f"{Fore.GREEN}✓ Generadas {len(area_summary_files)} sumarias de áreas")
+            
+            check_emergency_stop()  # Check before next step
+            
+            # Step 6: Generate all audit working papers
+            print(f"\n{Fore.YELLOW}Paso 6: Generando papeles de trabajo de auditoría...")
+            audit_results = self.comprehensive_papers.generate_complete_audit_package(
+                year,
+                entity_type
+            )
+            
+            print(f"{Fore.GREEN}✓ Papeles de trabajo generados: {audit_results.get('total_files', 0)} archivos")
+            
+            # Summary
+            print(f"\n{Fore.CYAN}{'='*60}")
+            print(f"{Fore.CYAN}  RESUMEN DEL PAQUETE DE AUDITORÍA")
+            print(f"{Fore.CYAN}{'='*60}\n")
+            print(f"  Ejercicio: {year}")
+            print(f"  Tipo de entidad: {entity_type.upper()}")
+            print(f"  Materialidad global: {materiality['overall_materiality']:,.2f} €")
+            print(f"  Áreas de alto riesgo: {len(high_risk)}")
+            print(f"  Áreas de riesgo medio: {len(medium_risk)}")
+            print(f"  Programas de trabajo: {len(work_programs)}")
+            print(f"  Cuestionarios: {len(questionnaire_files)}")
+            print(f"  Revisión analítica: 1 archivo")
+            print(f"  Circularización: {len(circularization_files)} archivos")
+            print(f"  Sumarias de áreas: {len(area_summary_files)} archivos")
+            print(f"  Papeles de trabajo: {audit_results.get('total_files', 0)}")
+            total_files_count = 1 + len(work_programs) + len(questionnaire_files) + 1 + len(circularization_files) + len(area_summary_files) + audit_results.get('total_files', 0)
+            print(f"\n  {Fore.YELLOW}TOTAL ARCHIVOS GENERADOS: {total_files_count}")
+            print(f"\n{Fore.GREEN}✓ Paquete completo de auditoría generado correctamente\n")
+            
+            return {
+                'materiality': materiality,
+                'risk_matrix_file': risk_matrix_file,
+                'work_programs': work_programs,
+                'questionnaires': questionnaire_files,
+                'analytical_review': analytical_file,
+                'circularization': circularization_files,
+                'area_summaries': area_summary_files,
+                'audit_papers': audit_results,
+                'total_files': total_files_count
+            }
+            
+        except EmergencyStop:
+            print(f"\n{Fore.YELLOW}⚠️  Generación de paquete detenida por el usuario")
+            print(f"{Fore.CYAN}   Los archivos generados hasta el momento se han guardado")
+            
+            # Save error report
+            self.emergency_controller.save_error_report()
+            
+            return {
+                'status': 'stopped',
+                'message': 'Proceso detenido por parada de emergencia'
+            }
+        except Exception as e:
+            print(f"\n{Fore.RED}❌ Error durante la generación del paquete: {str(e)}")
+            
+            # Log error and attempt recovery
+            self.emergency_controller.log_error(e, 'generate_complete_audit_package')
+            
+            # Get suggestions
+            from src.emergency_control import AutoRecovery
+            recovery = AutoRecovery()
+            suggestions = recovery.get_recovery_suggestions(e, {'task': 'generate_complete_audit_package'})
+            
+            print(f"\n{Fore.YELLOW}Sugerencias de recuperación:")
+            for suggestion in suggestions:
+                print(f"  • {suggestion}")
+            
+            # Save error report
+            self.emergency_controller.save_error_report()
+            
+            return None
     
     def interactive_mode(self):
         """Interactive mode for queries"""
@@ -609,14 +685,38 @@ def main():
             # Then process other documents
             system.process_bulk_documents(args.input_dir)
     
+    except EmergencyStop:
+        print(f"\n{Fore.YELLOW}🚨 Proceso detenido por parada de emergencia")
+        print(f"{Fore.CYAN}   Los archivos procesados se han guardado")
+        
+        # Save error report
+        controller = get_emergency_controller()
+        report_path = controller.save_error_report()
+        print(f"{Fore.CYAN}   Informe de errores guardado: {report_path}")
+        
+        sys.exit(0)
     except KeyboardInterrupt:
         print(f"\n\n{Fore.YELLOW}Proceso interrumpido por el usuario")
         sys.exit(0)
     except Exception as e:
         print(f"\n{Fore.RED}Error fatal: {e}")
         logging.exception("Fatal error")
+        
+        # Get recovery suggestions
+        try:
+            from src.emergency_control import AutoRecovery
+            recovery = AutoRecovery()
+            suggestions = recovery.get_recovery_suggestions(e)
+            print(f"\n{Fore.YELLOW}Sugerencias de recuperación:")
+            for suggestion in suggestions:
+                print(f"  • {suggestion}")
+        except:
+            pass
+        
         sys.exit(1)
 
 
 if __name__ == '__main__':
+    # Display emergency control help on startup
+    print_emergency_help()
     main()
